@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>💧 Reg (Vegga) — Unitat {{ unit_id }}</h1>
+    <div>
+        <a href="{{ url_for('vegga', unit=unit_id, refresh=1) }}" class="btn btn-outline-primary">🔄 Actualitza ara</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Tornar</a>
+    </div>
+</div>
+
+{% if sync_error %}
+<div class="alert alert-warning">
+    <strong>No s'ha pogut actualitzar des de Vegga:</strong> {{ sync_error }}
+    {% if status %}<br>Es mostren les últimes dades desades.{% endif %}
+</div>
+{% elif just_synced %}
+<div class="alert alert-info py-2">🔄 Dades actualitzades ara mateix des de Vegga.</div>
+{% endif %}
+
+{% if not status %}
+<div class="alert alert-warning">
+    Encara no hi ha dades de Vegga desades. Executa <code>python scripts/vegga_scraper.py --unit {{ unit_id }} --pages "a25/programs,sectors,fertilizers,filters,sensors"</code> per obtenir-les.
+</div>
+{% else %}
+
+{% set has_alarm = status.alarm or status.out_service or status.system_stop_malfunction or status.conditional_stop_malfunction
+    or status.general_malfunction or status.flow_malfunction or status.counter_malfunction
+    or status.fertilizer_malfunction or status.filter_malfunction or status.ph_malfunction
+    or status.ce_malfunction or status.definitive_stop_malfunction %}
+
+<div class="alert {{ 'alert-danger' if has_alarm else 'alert-success' }} mb-4">
+    <strong>{{ '⚠️ Hi ha una incidència al programador' if has_alarm else '✅ Sense incidències detectades' }}</strong>
+    — Estat: {{ 'Connectat' if status.connected else '🔴 Desconnectat' }} ·
+    Última comunicació: {{ status.last_reception }} ·
+    Última actualització d'aquestes dades: {{ status.snapshot_at }}
+    {% if has_alarm %}
+    <ul class="mb-0 mt-2">
+        {% if status.out_service %}<li>Fora de servei</li>{% endif %}
+        {% if status.system_stop_malfunction %}<li>Aturada per avaria del sistema</li>{% endif %}
+        {% if status.flow_malfunction %}<li>Avaria de cabal</li>{% endif %}
+        {% if status.counter_malfunction %}<li>Avaria de comptador</li>{% endif %}
+        {% if status.fertilizer_malfunction %}<li>Avaria de fertilitzant</li>{% endif %}
+        {% if status.filter_malfunction %}<li>Avaria de filtres</li>{% endif %}
+        {% if status.ph_malfunction %}<li>Avaria de pH</li>{% endif %}
+        {% if status.ce_malfunction %}<li>Avaria de conductivitat (CE)</li>{% endif %}
+        {% if status.definitive_stop_malfunction %}<li>Aturada definitiva</li>{% endif %}
+    </ul>
+    {% endif %}
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white"><h5>Comptadors d'aigua</h5></div>
+            <div class="card-body">
+                {% if meters %}
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Comptador</th><th>Volum acumulat</th><th>Cabal actual</th></tr></thead>
+                    <tbody>
+                        {% for m in meters %}
+                        {% if m.total_volume or m.x_flow %}
+                        <tr>
+                            <td>#{{ m.meter_id }}</td>
+                            <td>{{ m.total_volume }}</td>
+                            <td>{{ m.x_flow }}</td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <small class="text-muted">Unitats sense confirmar (probablement litres o m³ segons configuració del comptador).</small>
+                {% else %}
+                <p class="text-muted mb-0">Sense dades de comptadors.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white"><h5>Sensors analògics / digitals</h5></div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        {% for a in analog_sensors %}
+                        <tr>
+                            <td>Analògic #{{ a.sensor_id }} {{ '(' + a.name + ')' if a.name else '' }}</td>
+                            <td>{{ a.x_value }} <small class="text-muted">/ {{ a.min_graphics }}–{{ a.max_graphics }}</small></td>
+                        </tr>
+                        {% endfor %}
+                        {% for d in digital_sensors %}
+                        <tr>
+                            <td>Digital #{{ d.sensor_id }} {{ '(' + d.name + ')' if d.name else '' }}</td>
+                            <td>{{ 'ON' if d.x_state else 'OFF' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <small class="text-muted">Encara no sabem què mesura cada sensor — cal confirmar-ho mirant el nom real a Vegga.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white"><h5>Sectors actius ({{ sectors|length }})</h5></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Sector</th><th>Sortida</th><th>Programes</th></tr></thead>
+                    <tbody>
+                        {% for s in sectors %}
+                        <tr>
+                            <td>{{ s.name }}</td>
+                            <td>{{ s.output }}</td>
+                            <td><small>{{ s.program_list }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white"><h5>Programes de reg configurats ({{ programs|length }})</h5></div>
+            <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Programa</th><th>Sector</th><th>Inici</th><th>Durada</th><th>Dies</th></tr></thead>
+                    <tbody>
+                        {% for p in programs %}
+                        <tr>
+                            <td>{{ p.name }}</td>
+                            <td>{{ p.sector1 }}</td>
+                            <td>{{ p.start_minutes|minutes_to_time }}</td>
+                            <td>{{ p.duration_seconds|seconds_to_duration }}</td>
+                            <td>
+                                <small>
+                                {% for d, active in [('Dl', p.monday), ('Dt', p.tuesday), ('Dc', p.wednesday), ('Dj', p.thursday), ('Dv', p.friday), ('Ds', p.saturday), ('Dg', p.sunday)] %}
+                                    {% if active %}{{ d }}{% else %}<span class="text-muted">{{ d }}</span>{% endif %}
+                                {% endfor %}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-dark text-white"><h5>Últimes neteges de filtre</h5></div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Data</th><th>Número</th><th>Durada (s)</th></tr></thead>
+            <tbody>
+                {% for f in filter_events %}
+                <tr>
+                    <td>{{ f.event_date }}</td>
+                    <td>{{ f.number }}</td>
+                    <td>{{ f.duration_value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

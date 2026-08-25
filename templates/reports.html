@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>📊 Informes i Estadístiques</h1>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Tornar</a>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white"><h5>Despeses per Tipus</h5></div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for item in expenses_by_type %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ item.name }}
+                        <span class="badge bg-primary rounded-pill">{{ "%.2f"|format(item.total) }} €</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white"><h5>Exportació de Dades</h5></div>
+            <div class="card-body">
+                <p>Descarrega els teus registres en format CSV per a Excel:</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('export_csv', category='labors') }}" class="btn btn-outline-primary">Descarregar Treballs</a>
+                    <a href="{{ url_for('export_csv', category='production') }}" class="btn btn-outline-success">Descarregar Producció</a>
+                    <a href="{{ url_for('export_csv', category='expenses') }}" class="btn btn-outline-danger">Descarregar Despeses</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <strong>Nota del pagès:</strong> Les dades es recullen en temps real segons el que has entrat al camp.
+</div>
+{% endblock %}

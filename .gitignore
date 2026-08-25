@@ -1,0 +1,9 @@
+build/
+dist/
+dist.zip
+.env
+data/vegga_raw/
+data/vegga_debug/
+db/*.db
+__pycache__/
+*.pyc

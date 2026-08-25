@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow">
+    <div class="card-header bg-success text-white">
+        <h2>🌿 {% if item %}Editar{% else %}Registrar{% endif %} Collita / Venda</h2>
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('edit_production', id=item.id) if item else url_for('add_production') }}" method="post">
+            <div class="mb-3">
+                <label class="form-label">Data de venda</label>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <select name="day" class="form-select" required>
+                            <option value="" disabled {% if not item %}selected{% endif %}>Dia</option>
+                            {% for d in days %}
+                            <option value="{{ d }}" {% if (item_date and item_date.day == d) %}selected{% endif %}>{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select name="month" class="form-select" required>
+                            <option value="" disabled {% if not item %}selected{% endif %}>Mes</option>
+                            {% for m_val, m_name in months %}
+                            <option value="{{ m_val }}" {% if (item_date and item_date.month == m_val) %}selected{% endif %}>{{ m_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select name="year" class="form-select" required>
+                            {% for y in years %}
+                            <option value="{{ y }}" {% if (item_date and item_date.year == y) or (not item and y == current_year) %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="kilos" class="form-label">Quilos recollits (Kg)</label>
+                <input type="number" step="0.1" class="form-control" id="kilos" name="kilos" value="{{ item.kilos if item else '' }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="price_per_kilo" class="form-label">Preu de venda per quilo (€/Kg)</label>
+                <input type="number" step="0.01" class="form-control" id="price_per_kilo" name="price_per_kilo" value="{{ item.price_per_kilo if item else '' }}" required>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success btn-lg">{% if item %}Actualitzar{% else %}Desar{% endif %} Venda</button>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancel·lar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

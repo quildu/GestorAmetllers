@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-5">
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3 shadow">
+            <div class="card-body">
+                <h5 class="card-title">Ingressos Totals (Venda)</h5>
+                <p class="card-text fs-2">{{ "%.2f"|format(income_total) }} €</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger mb-3 shadow">
+            <div class="card-body">
+                <h5 class="card-title">Despeses Totals (Aigua, Fitos, Treball)</h5>
+                <p class="card-text fs-2">{{ "%.2f"|format(total_expenses) }} €</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3 shadow">
+            <div class="card-body">
+                <h5 class="card-title">Benefici Net</h5>
+                <p class="card-text fs-2">{{ "%.2f"|format(net_profit) }} €</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 class="mb-4">Operacions de Camp Ràpides</h3>
+<div class="d-grid gap-3 d-md-flex justify-content-md-start mb-5">
+    <a href="{{ url_for('add_production') }}" class="btn btn-outline-success btn-lg p-4">🌿 Registrar Collita</a>
+    <a href="{{ url_for('add_labor') }}" class="btn btn-outline-warning btn-lg p-4 text-dark">👨‍🌾 Treballs i Jornals</a>
+    <a href="{{ url_for('add_expense') }}" class="btn btn-outline-danger btn-lg p-4">💧 Informar Despesa / Avaria</a>
+</div>
+
+<div class="text-center d-grid gap-2 d-md-block">
+    <a href="{{ url_for('history') }}" class="btn btn-dark btn-lg px-5">📋 Veure Historial</a>
+    <a href="{{ url_for('reports') }}" class="btn btn-info btn-lg px-5 text-white">📊 Veure Informes</a>
+</div>
+{% endblock %}

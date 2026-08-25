@@ -1,0 +1,12 @@
+build/
+dist/
+dist.zip
+db/farm.db
+data/vegga_raw/
+data/vegga_debug/
+scripts/__pycache__/
+**/__pycache__/
+*.pyc
+.env
+.git/
+.gitignore

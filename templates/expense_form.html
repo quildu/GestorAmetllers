@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header bg-danger text-white">
+        <h2>💧 {% if item %}Editar{% else %}Registrar{% endif %} Despesa / Avaria</h2>
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('edit_expense', id=item.id) if item else url_for('add_expense') }}" method="post">
+            <div class="mb-3">
+                <label class="form-label">Data</label>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <select name="day" class="form-select" required>
+                            <option value="" disabled {% if not item %}selected{% endif %}>Dia</option>
+                            {% for d in days %}
+                            <option value="{{ d }}" {% if (item_date and item_date.day == d) %}selected{% endif %}>{{ d }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select name="month" class="form-select" required>
+                            <option value="" disabled {% if not item %}selected{% endif %}>Mes</option>
+                            {% for m_val, m_name in months %}
+                            <option value="{{ m_val }}" {% if (item_date and item_date.month == m_val) %}selected{% endif %}>{{ m_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select name="year" class="form-select" required>
+                            {% for y in years %}
+                            <option value="{{ y }}" {% if (item_date and item_date.year == y) or (not item and y == current_year) %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="expense_type_id" class="form-label">Tipus de despesa</label>
+                <div class="input-group">
+                    <select class="form-select" id="expense_type_id" name="expense_type_id" required>
+                        <option value="" selected disabled>Selecciona un tipus...</option>
+                        {% for et in expense_types %}
+                        <option value="{{ et.id }}" {% if item and item.expense_type_id == et.id %}selected{% endif %}>{{ et.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#addExpenseTypeModal">+</button>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="description" class="form-label">Descripció</label>
+                <input type="text" class="form-control" id="description" name="description" placeholder="Ex: Reparació goteig" value="{{ item.description if item else '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="amount" class="form-label">Import total (€)</label>
+                <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="{{ item.amount if item else '' }}" required>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-danger btn-lg">{% if item %}Actualitzar{% else %}Desar{% endif %} Despesa</button>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Enrere</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addExpenseTypeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="quickAddExpenseTypeForm">
+                <div class="modal-header"><h5>Nou Tipus de Despesa</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><input type="text" name="name" class="form-control" placeholder="Ex: Gasoli" required></div>
+                <div class="modal-footer"><button type="submit" class="btn btn-primary">Afegir</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+async function handleQuickAdd(formId, endpoint, selectId) {
+    const form = document.getElementById(formId);
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (data.success) {
+                const select = document.getElementById(selectId);
+                const option = new Option(data.name, data.id);
+                select.add(option);
+                select.value = data.id; // Seleccionar el nou
+                
+                // Tancar el modal
+                const modalEl = document.getElementById(form.closest('.modal').id);
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+                form.reset();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error de connexió');
+        }
+    });
+}
+
+handleQuickAdd('quickAddExpenseTypeForm', '/master/expense_type/add', 'expense_type_id');
+</script>
+{% endblock %}
