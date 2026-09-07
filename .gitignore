@@ -5,5 +5,6 @@ dist.zip
 data/vegga_raw/
 data/vegga_debug/
 db/*.db
+documents/
 __pycache__/
 *.pyc

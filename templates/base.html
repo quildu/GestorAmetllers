@@ -29,11 +29,15 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if current_user.is_authenticated %}
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    {% if g.get('current_parcel') %}
+                    <li class="nav-item"><span class="navbar-text text-white-50 me-2">📍 {{ g.current_parcel.name }}</span></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Inici</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('history') }}">📋 Historial</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('reports') }}">📊 Informes</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('vegga') }}">💧 Reg (Vegga)</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('list_parcels') }}">🔀 Canviar parcel·la</a></li>
+                    {% endif %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">🚪 Sortir</a></li>
                 </ul>
                 {% endif %}

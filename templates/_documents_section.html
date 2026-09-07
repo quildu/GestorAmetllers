@@ -1,0 +1,71 @@
+{# S'espera 'documents' (llista, opcional) quan s'edita un registre existent ('item' definit) #}
+<div class="mb-3">
+    <label class="form-label">📎 Documents adjunts</label>
+    {% if item %}
+        {% if documents %}
+        <ul class="list-group mb-2">
+            {% for doc in documents %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('download_document', doc_id=doc.id) }}">{{ doc.original_filename }}</a>
+                <form action="{{ url_for('delete_document', doc_id=doc.id) }}" method="post" class="d-inline" onsubmit="return confirm('Segur que vols esborrar aquest document?');">
+                    <input type="hidden" name="redirect_to" value="{{ request.path }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">🗑</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted small">Encara no hi ha documents adjunts.</p>
+        {% endif %}
+    {% endif %}
+    <input type="file" class="form-control" id="documentsInput" name="documents" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.webp">
+    <div class="form-text">PDF o imatges, fins a 10MB per fitxer. Pots tornar a obrir el selector per afegir-ne més, s'aniran acumulant.</div>
+    <ul class="list-group mt-2" id="pendingDocumentsList"></ul>
+</div>
+<script>
+(function() {
+    var input = document.getElementById('documentsInput');
+    var list = document.getElementById('pendingDocumentsList');
+    var selected = [];
+
+    function refreshInputFiles() {
+        var dt = new DataTransfer();
+        selected.forEach(function(f) { dt.items.add(f); });
+        input.files = dt.files;
+    }
+
+    function renderList() {
+        list.innerHTML = '';
+        selected.forEach(function(f, idx) {
+            var li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center py-1';
+            var span = document.createElement('span');
+            span.className = 'small';
+            span.textContent = f.name;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-outline-secondary';
+            btn.textContent = '✕';
+            btn.addEventListener('click', function() {
+                selected.splice(idx, 1);
+                refreshInputFiles();
+                renderList();
+            });
+            li.appendChild(span);
+            li.appendChild(btn);
+            list.appendChild(li);
+        });
+    }
+
+    input.addEventListener('change', function() {
+        Array.prototype.forEach.call(input.files, function(f) {
+            var alreadyThere = selected.some(function(s) {
+                return s.name === f.name && s.size === f.size && s.lastModified === f.lastModified;
+            });
+            if (!alreadyThere) selected.push(f);
+        });
+        refreshInputFiles();
+        renderList();
+    });
+})();
+</script>

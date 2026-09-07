@@ -1,21 +1,35 @@
-CREATE TABLE IF NOT EXISTS workers (
+CREATE TABLE IF NOT EXISTS parcels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    vegga_unit_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS workers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parcel_id INTEGER NOT NULL DEFAULT 1,
+    name TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id)
 );
 
 CREATE TABLE IF NOT EXISTS labor_types (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parcel_id INTEGER NOT NULL DEFAULT 1,
     name TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0
+    is_deleted INTEGER DEFAULT 0,
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id)
 );
 
 CREATE TABLE IF NOT EXISTS labors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parcel_id INTEGER NOT NULL DEFAULT 1,
     date TEXT NOT NULL,
     worker_id INTEGER NOT NULL,
     labor_type_id INTEGER NOT NULL,
@@ -26,31 +40,37 @@ CREATE TABLE IF NOT EXISTS labors (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_deleted INTEGER DEFAULT 0,
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id),
     FOREIGN KEY (worker_id) REFERENCES workers (id),
     FOREIGN KEY (labor_type_id) REFERENCES labor_types (id)
 );
 
 CREATE TABLE IF NOT EXISTS production (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parcel_id INTEGER NOT NULL DEFAULT 1,
     date TEXT NOT NULL,
     kilos REAL NOT NULL,
     price_per_kilo REAL NOT NULL,
     total_income REAL NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0
+    is_deleted INTEGER DEFAULT 0,
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id)
 );
 
 CREATE TABLE IF NOT EXISTS expense_types (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parcel_id INTEGER NOT NULL DEFAULT 1,
     name TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0
+    is_deleted INTEGER DEFAULT 0,
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id)
 );
 
 CREATE TABLE IF NOT EXISTS expenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parcel_id INTEGER NOT NULL DEFAULT 1,
     date TEXT NOT NULL,
     expense_type_id INTEGER NOT NULL,
     description TEXT NOT NULL,
@@ -58,8 +78,26 @@ CREATE TABLE IF NOT EXISTS expenses (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_deleted INTEGER DEFAULT 0,
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id),
     FOREIGN KEY (expense_type_id) REFERENCES expense_types (id)
 );
+
+-- Documents adjunts (collita, treballs/jornals, despeses/averies) en una sola taula polimorfica
+CREATE TABLE IF NOT EXISTS documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parcel_id INTEGER NOT NULL DEFAULT 1,
+    entity_type TEXT NOT NULL,          -- 'production' | 'labor' | 'expense'
+    entity_id INTEGER NOT NULL,
+    original_filename TEXT NOT NULL,
+    stored_filename TEXT NOT NULL,
+    relative_path TEXT NOT NULL,
+    mime_type TEXT,
+    size_bytes INTEGER,
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id)
+);
+CREATE INDEX IF NOT EXISTS idx_documents_entity ON documents(entity_type, entity_id);
 
 -- Dades extretes automaticament de Vegga (programador de reg)
 CREATE TABLE IF NOT EXISTS vegga_status (

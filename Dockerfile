@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY . .
 
 ENV DB_PATH=/app/db/farm.db
+ENV DOCUMENTS_PATH=/app/documents
 EXPOSE 5000
 
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "60", "wsgi:app"]

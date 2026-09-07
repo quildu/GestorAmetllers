@@ -5,6 +5,7 @@ services:
     env_file: .env
     volumes:
       - ./db:/app/db
+      - ./documents:/app/documents
     expose:
       - "5000"
 

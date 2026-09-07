@@ -1,14 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>💧 Reg (Vegga) — Unitat {{ unit_id }}</h1>
+    <h1>💧 Reg (Vegga){% if unit_id %} — Unitat {{ unit_id }}{% endif %}</h1>
     <div>
+        {% if unit_id %}
         <a href="{{ url_for('vegga', unit=unit_id, refresh=1) }}" class="btn btn-outline-primary">🔄 Actualitza ara</a>
+        {% endif %}
         <a href="{{ url_for('index') }}" class="btn btn-secondary">Tornar</a>
     </div>
 </div>
 
-{% if sync_error %}
+{% if not unit_id %}
+<div class="alert alert-warning">
+    Aquesta parcel·la no té cap unitat Vegga configurada. Edita la fila corresponent a la taula <code>parcels</code> (columna <code>vegga_unit_id</code>) per activar-ho.
+</div>
+{% elif sync_error %}
 <div class="alert alert-warning">
     <strong>No s'ha pogut actualitzar des de Vegga:</strong> {{ sync_error }}
     {% if status %}<br>Es mostren les últimes dades desades.{% endif %}
@@ -17,11 +23,11 @@
 <div class="alert alert-info py-2">🔄 Dades actualitzades ara mateix des de Vegga.</div>
 {% endif %}
 
-{% if not status %}
+{% if unit_id and not status %}
 <div class="alert alert-warning">
     Encara no hi ha dades de Vegga desades. Executa <code>python scripts/vegga_scraper.py --unit {{ unit_id }} --pages "a25/programs,sectors,fertilizers,filters,sensors"</code> per obtenir-les.
 </div>
-{% else %}
+{% elif unit_id %}
 
 {% set has_alarm = status.alarm or status.out_service or status.system_stop_malfunction or status.conditional_stop_malfunction
     or status.general_malfunction or status.flow_malfunction or status.counter_malfunction
