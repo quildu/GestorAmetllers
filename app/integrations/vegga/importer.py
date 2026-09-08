@@ -1,14 +1,10 @@
 """
-Interpreta les respostes JSON capturades de Vegga (per vegga_scraper.py) i les
+Interpreta les respostes JSON capturades de Vegga (per scraper.py) i les
 desa a la base de dades local, perque l'app les pugui mostrar sense haver
 d'anar a buscar-les cada cop a Vegga.
 """
 
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from scripts.database import get_connection
+from ...database import get_connection
 
 
 def _bool_to_int(v):
@@ -109,7 +105,7 @@ def import_digitals(conn, unit_id, body):
 
 
 def import_captured(captured, unit_id):
-    """captured: llista de {"url", "status", "body"} tal com les recull vegga_scraper.py"""
+    """captured: llista de {"url", "status", "body"} tal com les recull scraper.py"""
     conn = get_connection()
     imported = {"status": 0, "meters": 0, "filters": 0, "sectors": 0, "programs": 0, "analogs": 0, "digitals": 0}
 

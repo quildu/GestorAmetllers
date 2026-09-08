@@ -153,3 +153,38 @@ Atendre la petició de l'usuari per a una solució més robusta i amigable (exec
 
 ### Impacto Esperado
 Capacitat de distribució del programari com una carpeta autònoma amb un executable, facilitant l'ús professional i la portabilitat.
+
+---
+
+## [2026-09-08 23:21]
+
+### Tipo de Cambio
+- Refactorització / Arquitectura per capes
+
+### Archivo(s) Afectado(s)
+- app/ [NEW] (paquet nou: `web/`, `services/`, `repositories/`, `integrations/vegga/`, `paths.py`, `config.py`, `database.py`, `auth.py`)
+- scripts/app.py, scripts/database.py, scripts/config.py, scripts/auth.py, scripts/vegga_import.py [ELIMINATS, moguts a `app/`]
+- scripts/vegga_scraper.py (reduït a wrapper CLI prim sobre `app/integrations/vegga/scraper.py`)
+- wsgi.py, launcher.py, run_finca.bat
+- directives/gestion_finca_SOP.md
+
+### Descripción Técnica
+Divisió del monòlit `scripts/app.py` (647 línies amb rutes, negoci i SQL barrejats)
+en tres capes: `app/web/` (rutes Flask, un mòdul per domini, registrades amb
+`register(app)` per preservar exactament els mateixos noms d'endpoint que abans
+i no trencar cap `url_for` de les plantilles), `app/services/` (regles de negoci:
+totals, càlcul de preus, sincronització de Vegga) i `app/repositories/` (SQL pur,
+sense dependències de Flask). El scraper i l'importador de Vegga es mouen a
+`app/integrations/vegga/` com a integració externa reutilitzable. S'unifica en
+un únic `app/paths.py::resource_path()` la lògica, abans duplicada, de
+localització de recursos empaquetats amb PyInstaller.
+
+### Motivo
+Petició de l'usuari d'organitzar el projecte amb una arquitectura per capes
+per facilitar el manteniment i el creixement futur de l'aplicació.
+
+### Impacto Esperado
+Cap canvi de comportament ni d'URL per a l'usuari final: mateixes rutes,
+mateixa base de dades, mateix HTML. Codi molt més fàcil de navegar i ampliar
+(afegir un nou tipus de dada implica tocar un repositori, un servei i una ruta
+concrets, no un fitxer de 647 línies).

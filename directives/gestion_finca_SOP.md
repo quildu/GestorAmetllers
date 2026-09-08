@@ -11,7 +11,7 @@ Desarrollar una aplicación web sencilla en Python (Flask) y bases de datos (SQL
 
 ## Salidas y Entregables
 - Scripts idempotentes y robustos.
-- Ejecución alojada en `scripts/app.py`.
+- Ejecución alojada en `app/` (arquitectura per capes: `web/` rutes, `services/` negoci, `repositories/` accés a dades), exposada via `wsgi.py` / `launcher.py`.
 - Lógica de persistencia en `db/`.
 
 ## Restricciones y Casos Borde

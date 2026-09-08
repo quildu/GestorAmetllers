@@ -1,8 +1,12 @@
-from scripts.app import app, seed_data
-from scripts.database import init_db
+import os
+
+from app import create_app, seed_data
+from app.database import init_db
+
+app = create_app()
 
 init_db()
 seed_data()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=os.getenv('FLASK_DEBUG', '0') == '1', host='0.0.0.0', port=5000)

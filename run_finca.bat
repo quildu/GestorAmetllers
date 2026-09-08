@@ -40,6 +40,6 @@ echo ======================================================
 start http://127.0.0.1:5000
 
 :: Executar l'aplicacio
-python scripts/app.py
+python wsgi.py
 
 pause

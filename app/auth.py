@@ -4,6 +4,8 @@ from flask import abort
 from flask_login import LoginManager, UserMixin, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from . import config  # noqa: F401 - garanteix que .env s'ha carregat abans de llegir credencials
+
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 

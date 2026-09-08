@@ -1,15 +1,11 @@
 import sqlite3
 import os
-import sys
-from .config import get_db_path
 
-def resource_path(relative_path):
-    if getattr(sys, 'frozen', False):
-        return os.path.join(getattr(sys, '_MEIPASS', ''), relative_path)
-    return os.path.join(os.path.dirname(__file__), '..', relative_path)
+from .config import get_db_path
+from .paths import resource_path
 
 DB_PATH = get_db_path()
-SCHEMA_PATH = resource_path('db/schemas/schema.sql')
+SCHEMA_PATH = resource_path("db/schemas/schema.sql")
 
 # Taules que van rebre una columna parcel_id quan es va introduir el suport multi-parcel·la.
 # Les bases de dades noves ja la tenen via schema.sql; aquesta llista nomes serveix per
