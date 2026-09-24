@@ -36,4 +36,5 @@ def register(app):
         expense_types = catalog_service.list_expense_types(conn, parcel_id)
         documents = documents_service.get_documents(conn, 'expense', id)
         siblings = expenses_service.get_group_siblings(conn, item['invoice_group'], parcel_id)
-        return render_template('expense_form.html', item=item, item_date=item_date, expense_types=expense_types, documents=documents, siblings=siblings)
+        other_parcels = parcels_service.list_other_parcels(conn, parcel_id)
+        return render_template('expense_form.html', item=item, item_date=item_date, expense_types=expense_types, documents=documents, siblings=siblings, other_parcels=other_parcels)

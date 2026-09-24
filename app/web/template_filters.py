@@ -16,7 +16,7 @@ def register(app):
                 (5, 'Maig'), (6, 'Juny'), (7, 'Juliol'), (8, 'Agost'),
                 (9, 'Setembre'), (10, 'Octubre'), (11, 'Novembre'), (12, 'Desembre')
             ],
-            'years': range(2024, 2031)
+            'years': range(2020, 2031)
         }
 
     @app.template_filter('format_date')

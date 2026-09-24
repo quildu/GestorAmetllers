@@ -7,10 +7,10 @@ def insert(conn, parcel_id, date_str, expense_type_id, description, amount, invo
     return cur.lastrowid
 
 
-def update(conn, parcel_id, item_id, date_str, expense_type_id, description, amount):
+def update(conn, parcel_id, item_id, date_str, expense_type_id, description, amount, invoice_group=None):
     conn.execute(
-        "UPDATE expenses SET date=?, expense_type_id=?, description=?, amount=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND parcel_id=?",
-        (date_str, expense_type_id, description, amount, item_id, parcel_id)
+        "UPDATE expenses SET date=?, expense_type_id=?, description=?, amount=?, invoice_group=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND parcel_id=?",
+        (date_str, expense_type_id, description, amount, invoice_group, item_id, parcel_id)
     )
     conn.commit()
 

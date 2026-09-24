@@ -7,10 +7,10 @@ def insert(conn, parcel_id, date_str, worker_id, labor_type_id, hours, price_per
     return cur.lastrowid
 
 
-def update(conn, parcel_id, item_id, date_str, worker_id, labor_type_id, hours, price_per_hour, total_price, description):
+def update(conn, parcel_id, item_id, date_str, worker_id, labor_type_id, hours, price_per_hour, total_price, description, invoice_group=None):
     conn.execute(
-        "UPDATE labors SET date=?, worker_id=?, labor_type_id=?, hours=?, price_per_hour=?, total_price=?, description=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND parcel_id=?",
-        (date_str, worker_id, labor_type_id, hours, price_per_hour, total_price, description, item_id, parcel_id)
+        "UPDATE labors SET date=?, worker_id=?, labor_type_id=?, hours=?, price_per_hour=?, total_price=?, description=?, invoice_group=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND parcel_id=?",
+        (date_str, worker_id, labor_type_id, hours, price_per_hour, total_price, description, invoice_group, item_id, parcel_id)
     )
     conn.commit()
 

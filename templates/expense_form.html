@@ -58,32 +58,27 @@
                 <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="{{ item.amount if item else '' }}" required>
             </div>
 
-            {% if item and item.invoice_group %}
-            <div class="alert alert-info">
-                Aquesta despesa forma part d'una factura compartida amb altres parcel·les:
-                <ul class="mb-0">
-                    {% for s in siblings %}
-                    <li>{{ s.parcel_name }}: {{ "%.2f"|format(s.amount) }} €</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-
-            {% if not item %}
+            {% set shared_parcel_ids = siblings|map(attribute='parcel_id')|list if siblings else [] %}
+            {% set is_shared_now = item and item.invoice_group %}
             <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="is_shared" onchange="document.getElementById('shareBlock').hidden = !this.checked;">
+                <input type="checkbox" class="form-check-input" id="is_shared" {% if is_shared_now %}checked{% endif %} onchange="document.getElementById('shareBlock').hidden = !this.checked;">
                 <label class="form-check-label" for="is_shared">Aquesta factura també afecta a una altra parcel·la</label>
             </div>
-            <div id="shareBlock" hidden class="mb-3 border rounded p-3 bg-light">
+            <div id="shareBlock" {% if not is_shared_now %}hidden{% endif %} class="mb-3 border rounded p-3 bg-light">
                 <label class="form-label">Parcel·les amb qui es comparteix aquesta factura</label>
-                <select name="share_parcel_ids" class="form-select" multiple size="{{ other_parcels|length if other_parcels else 1 }}">
+                <div class="list-group">
                     {% for op in other_parcels %}
-                    <option value="{{ op.id }}">{{ op.name }} ({{ "%.2f"|format(op.hectares) }} ha)</option>
+                    <label class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            <input type="checkbox" class="form-check-input me-2" name="share_parcel_ids" value="{{ op.id }}" {% if op.id in shared_parcel_ids %}checked{% endif %}>
+                            🌳 {{ op.name }}
+                        </span>
+                        <span class="badge bg-secondary rounded-pill">{{ "%.2f"|format(op.hectares) }} ha</span>
+                    </label>
                     {% endfor %}
-                </select>
-                <div class="form-text">L'import total introduit a dalt es repartirà automàticament entre aquesta parcel·la i les seleccionades, proporcionalment a les hectàrees de cadascuna.</div>
+                </div>
+                <div class="form-text">L'import total introduit a dalt es repartirà automàticament entre aquesta parcel·la i les seleccionades, proporcionalment a les hectàrees de cadascuna. Si en desmarques alguna, es deixarà d'incloure en aquest repartiment.</div>
             </div>
-            {% endif %}
 
             {% include '_documents_section.html' %}
 

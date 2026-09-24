@@ -47,8 +47,8 @@ function filterTables() {
                             <span class="badge bg-secondary">{{ item.labor_type_name }}</span>
                             {% if item.invoice_group %}<span class="badge bg-secondary" title="Aquest treball forma part d'un jornal repartit amb una altra parcel·la">🔗 Compartit</span>{% endif %}
                         </td>
-                        <td>{{ item.hours }}</td>
-                        <td>{{ item.price_per_hour }} €</td>
+                        <td>{{ item.hours if item.hours else '—' }}</td>
+                        <td>{{ (item.price_per_hour ~ ' €') if item.price_per_hour else '—' }}</td>
                         <td><strong>{{ item.total_price }} €</strong></td>
                         <td>
                             <div style="font-size: 0.7rem; color: #666;">
@@ -64,15 +64,10 @@ function filterTables() {
                             {% endfor %}
                         </td>
                         <td>
-                            <form action="{{ url_for('delete_item', category='labor', item_id=item.id) }}" method="post" onsubmit="return confirm('Segur que vols esborrar aquest registre?');" class="d-inline">
+                            <form action="{{ url_for('delete_item', category='labor', item_id=item.id) }}" method="post" onsubmit="return confirm({% if item.invoice_group %}'Aquest treball també està vinculat a una altra parcel·la. S\'esborrarà a TOTES les parcel·les afectades. Continuar?'{% else %}'Segur que vols esborrar aquest registre?'{% endif %});" class="d-inline">
                                 <a href="{{ url_for('edit_labor', id=item.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Esborrar</button>
                             </form>
-                            {% if item.invoice_group %}
-                            <form action="{{ url_for('delete_invoice_group', category='labor', invoice_group=item.invoice_group) }}" method="post" onsubmit="return confirm('Això esborrarà aquest treball a TOTES les parcel·les afectades per aquest jornal compartit. Continuar?');" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-warning">Esborrar jornal complet</button>
-                            </form>
-                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -167,15 +162,10 @@ function filterTables() {
                             {% endfor %}
                         </td>
                         <td>
-                            <form action="{{ url_for('delete_item', category='expense', item_id=item.id) }}" method="post" onsubmit="return confirm('Segur que vols esborrar aquest registre?');" class="d-inline">
+                            <form action="{{ url_for('delete_item', category='expense', item_id=item.id) }}" method="post" onsubmit="return confirm({% if item.invoice_group %}'Aquesta despesa també està vinculada a una altra parcel·la. S\'esborrarà a TOTES les parcel·les afectades. Continuar?'{% else %}'Segur que vols esborrar aquest registre?'{% endif %});" class="d-inline">
                                 <a href="{{ url_for('edit_expense', id=item.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Esborrar</button>
                             </form>
-                            {% if item.invoice_group %}
-                            <form action="{{ url_for('delete_invoice_group', category='expense', invoice_group=item.invoice_group) }}" method="post" onsubmit="return confirm('Això esborrarà aquesta despesa a TOTES les parcel·les afectades per aquesta factura compartida. Continuar?');" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-warning">Esborrar factura completa</button>
-                            </form>
-                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
