@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS parcels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    hectares REAL NOT NULL DEFAULT 0,
     vegga_unit_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     expense_type_id INTEGER NOT NULL,
     description TEXT NOT NULL,
     amount REAL NOT NULL,
+    invoice_group TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_deleted INTEGER DEFAULT 0,

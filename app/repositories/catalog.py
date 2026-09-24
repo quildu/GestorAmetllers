@@ -34,6 +34,17 @@ def insert_expense_type(conn, parcel_id, name):
     return cur.lastrowid
 
 
+def get_expense_type(conn, expense_type_id):
+    return conn.execute("SELECT * FROM expense_types WHERE id = ?", (expense_type_id,)).fetchone()
+
+
+def find_expense_type_by_name(conn, parcel_id, name):
+    return conn.execute(
+        "SELECT * FROM expense_types WHERE parcel_id = ? AND is_deleted = 0 AND name = ?",
+        (parcel_id, name)
+    ).fetchone()
+
+
 def seed_defaults_for_parcel(conn, parcel_id):
     conn.executemany("INSERT INTO labor_types (name, parcel_id) VALUES (?, ?)",
                       [(name, parcel_id) for name in DEFAULT_LABOR_TYPES])

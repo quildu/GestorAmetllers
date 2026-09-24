@@ -147,7 +147,7 @@ async function handleQuickAdd(formId, endpoint, selectId) {
     });
 }
 
-handleQuickAdd('quickAddWorkerForm', '/master/worker/add', 'worker_id');
-handleQuickAdd('quickAddLaborTypeForm', '/master/labor_type/add', 'labor_type_id');
+handleQuickAdd('quickAddWorkerForm', '{{ url_for('quick_add_worker') }}', 'worker_id');
+handleQuickAdd('quickAddLaborTypeForm', '{{ url_for('quick_add_labor_type') }}', 'labor_type_id');
 </script>
 {% endblock %}

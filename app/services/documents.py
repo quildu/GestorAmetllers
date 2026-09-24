@@ -17,28 +17,37 @@ def allowed_document(filename):
 
 def save_documents(conn, parcel_id, entity_type, entity_id, files):
     """Desa al disc i registra a la taula 'documents' els fitxers rebuts per a una entitat concreta."""
+    save_documents_to_entities(conn, entity_type, {parcel_id: entity_id}, files)
+
+
+def save_documents_to_entities(conn, entity_type, entity_id_by_parcel, files):
+    """Desa el mateix fitxer (ex: una factura repartida entre parcel·les) a cadascuna de les
+    entitats indicades, una per parcel·la, cadascuna amb la seva propia copia registrada."""
     for f in files:
         if not f or not f.filename:
             continue
         if not allowed_document(f.filename):
             continue
 
-        original_filename = secure_filename(f.filename)
-        ext = original_filename.rsplit('.', 1)[1].lower()
-        stored_filename = f"{uuid.uuid4().hex}.{ext}"
+        for parcel_id, entity_id in entity_id_by_parcel.items():
+            f.stream.seek(0)
 
-        entity_dir = os.path.join(DOCUMENTS_DIR, str(parcel_id), entity_type, str(entity_id))
-        os.makedirs(entity_dir, exist_ok=True)
-        dest_path = os.path.join(entity_dir, stored_filename)
-        f.save(dest_path)
+            original_filename = secure_filename(f.filename)
+            ext = original_filename.rsplit('.', 1)[1].lower()
+            stored_filename = f"{uuid.uuid4().hex}.{ext}"
 
-        size_bytes = os.path.getsize(dest_path)
-        if size_bytes > MAX_DOCUMENT_SIZE_BYTES:
-            os.remove(dest_path)
-            continue
+            entity_dir = os.path.join(DOCUMENTS_DIR, str(parcel_id), entity_type, str(entity_id))
+            os.makedirs(entity_dir, exist_ok=True)
+            dest_path = os.path.join(entity_dir, stored_filename)
+            f.save(dest_path)
 
-        relative_path = f"{parcel_id}/{entity_type}/{entity_id}/{stored_filename}"
-        documents_repo.insert(conn, parcel_id, entity_type, entity_id, original_filename, stored_filename, relative_path, f.mimetype, size_bytes)
+            size_bytes = os.path.getsize(dest_path)
+            if size_bytes > MAX_DOCUMENT_SIZE_BYTES:
+                os.remove(dest_path)
+                continue
+
+            relative_path = f"{parcel_id}/{entity_type}/{entity_id}/{stored_filename}"
+            documents_repo.insert(conn, parcel_id, entity_type, entity_id, original_filename, stored_filename, relative_path, f.mimetype, size_bytes)
     conn.commit()
 
 

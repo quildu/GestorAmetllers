@@ -21,8 +21,25 @@ def migrate_parcel_columns(conn):
 
 def seed_first_parcel(conn):
     if not conn.execute("SELECT 1 FROM parcels LIMIT 1").fetchone():
-        conn.execute("INSERT INTO parcels (id, name, vegga_unit_id) VALUES (1, 'Servereta', 9982)")
+        conn.execute("INSERT INTO parcels (id, name, vegga_unit_id, hectares) VALUES (1, 'Servereta', 9982, 7)")
         conn.commit()
+
+# Columnes afegides despres de la creacio inicial d'aquestes taules; cal donar-les
+# d'alta en calent a les bases de dades que ja existien abans d'aquest canvi.
+def migrate_extra_columns(conn):
+    parcel_columns = [row[1] for row in conn.execute("PRAGMA table_info(parcels)").fetchall()]
+    if 'hectares' not in parcel_columns:
+        conn.execute("ALTER TABLE parcels ADD COLUMN hectares REAL NOT NULL DEFAULT 0")
+
+    expense_columns = [row[1] for row in conn.execute("PRAGMA table_info(expenses)").fetchall()]
+    if 'invoice_group' not in expense_columns:
+        conn.execute("ALTER TABLE expenses ADD COLUMN invoice_group TEXT")
+
+    # Cal crear l'index despres d'assegurar que la columna existeix (executescript
+    # de schema.sql corre abans que aquesta migracio, i fallaria en BDs existents).
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_expenses_invoice_group ON expenses(invoice_group)")
+
+    conn.commit()
 
 def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
@@ -32,6 +49,7 @@ def init_db():
         conn.commit()
         seed_first_parcel(conn)
         migrate_parcel_columns(conn)
+        migrate_extra_columns(conn)
 
 def get_connection():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)

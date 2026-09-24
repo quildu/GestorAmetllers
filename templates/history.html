@@ -146,7 +146,10 @@ function filterTables() {
                     <tr>
                         <td>{{ item.date }}</td>
                         <td><span class="badge bg-info text-dark">{{ item.expense_type_name }}</span></td>
-                        <td>{{ item.description }}</td>
+                        <td>
+                            {{ item.description }}
+                            {% if item.invoice_group %}<span class="badge bg-secondary" title="Aquesta despesa forma part d'una factura repartida amb una altra parcel·la">🔗 Compartida</span>{% endif %}
+                        </td>
                         <td><strong>{{ item.amount }} €</strong></td>
                         <td>
                             {% for doc in expense_docs.get(item.id, []) %}
@@ -160,6 +163,11 @@ function filterTables() {
                                 <a href="{{ url_for('edit_expense', id=item.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Esborrar</button>
                             </form>
+                            {% if item.invoice_group %}
+                            <form action="{{ url_for('delete_invoice_group', invoice_group=item.invoice_group) }}" method="post" onsubmit="return confirm('Això esborrarà aquesta despesa a TOTES les parcel·les afectades per aquesta factura compartida. Continuar?');" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Esborrar factura completa</button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
