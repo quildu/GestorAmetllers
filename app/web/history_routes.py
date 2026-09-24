@@ -33,8 +33,11 @@ def register(app):
             expenses_service.delete_expense(conn, parcel_id, item_id)
         return redirect(url_for('history'))
 
-    @app.route('/parcela/<int:parcel_id>/delete_invoice_group/<string:invoice_group>', methods=['POST'])
-    def delete_invoice_group(parcel_id, invoice_group):
+    @app.route('/parcela/<int:parcel_id>/delete_invoice_group/<string:category>/<string:invoice_group>', methods=['POST'])
+    def delete_invoice_group(parcel_id, category, invoice_group):
         conn = get_connection()
-        expenses_service.delete_expense_group(conn, invoice_group)
+        if category == 'labor':
+            labors_service.delete_labor_group(conn, invoice_group)
+        elif category == 'expense':
+            expenses_service.delete_expense_group(conn, invoice_group)
         return redirect(url_for('history'))

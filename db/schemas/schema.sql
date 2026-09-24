@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS labors (
     price_per_hour REAL NOT NULL,
     total_price REAL NOT NULL,
     description TEXT,
+    invoice_group TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_deleted INTEGER DEFAULT 0,

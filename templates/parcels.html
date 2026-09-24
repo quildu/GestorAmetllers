@@ -18,9 +18,10 @@
             </a>
             {% if current_user.is_admin %}
             <div class="card-footer bg-white border-top-0 pt-0">
-                <form action="{{ url_for('update_parcel_hectares', parcel_id=p.id) }}" method="post" class="d-flex gap-2 align-items-center">
-                    <input type="number" step="any" min="0" name="hectares" value="{{ p.hectares }}" class="form-control form-control-sm" style="max-width: 90px;">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">Actualitzar ha</button>
+                <form action="{{ url_for('update_parcel', parcel_id=p.id) }}" method="post" class="d-flex gap-2 align-items-center">
+                    <input type="text" name="name" value="{{ p.name }}" class="form-control form-control-sm" required>
+                    <input type="number" step="any" min="0" name="hectares" value="{{ p.hectares }}" class="form-control form-control-sm" style="max-width: 80px;">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Actualitzar</button>
                 </form>
             </div>
             {% endif %}

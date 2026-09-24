@@ -15,8 +15,8 @@ def create_parcel(conn, name, hectares=0):
     return parcel_id
 
 
-def update_hectares(conn, parcel_id, hectares):
-    parcels_repo.update_hectares(conn, parcel_id, hectares)
+def update_parcel(conn, parcel_id, name, hectares):
+    parcels_repo.update(conn, parcel_id, name, hectares)
 
 
 def list_other_parcels(conn, parcel_id):

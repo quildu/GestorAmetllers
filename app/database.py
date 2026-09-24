@@ -35,9 +35,14 @@ def migrate_extra_columns(conn):
     if 'invoice_group' not in expense_columns:
         conn.execute("ALTER TABLE expenses ADD COLUMN invoice_group TEXT")
 
-    # Cal crear l'index despres d'assegurar que la columna existeix (executescript
+    labor_columns = [row[1] for row in conn.execute("PRAGMA table_info(labors)").fetchall()]
+    if 'invoice_group' not in labor_columns:
+        conn.execute("ALTER TABLE labors ADD COLUMN invoice_group TEXT")
+
+    # Cal crear els index despres d'assegurar que les columnes existeixen (executescript
     # de schema.sql corre abans que aquesta migracio, i fallaria en BDs existents).
     conn.execute("CREATE INDEX IF NOT EXISTS idx_expenses_invoice_group ON expenses(invoice_group)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_labors_invoice_group ON labors(invoice_group)")
 
     conn.commit()
 

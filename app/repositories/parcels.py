@@ -24,6 +24,9 @@ def create(conn, name, hectares=0):
     return cur.lastrowid
 
 
-def update_hectares(conn, parcel_id, hectares):
-    conn.execute("UPDATE parcels SET hectares = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (hectares, parcel_id))
+def update(conn, parcel_id, name, hectares):
+    conn.execute(
+        "UPDATE parcels SET name = ?, hectares = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (name, hectares, parcel_id)
+    )
     conn.commit()

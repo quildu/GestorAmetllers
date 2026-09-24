@@ -1,7 +1,7 @@
-def insert(conn, parcel_id, date_str, worker_id, labor_type_id, hours, price_per_hour, total_price, description):
+def insert(conn, parcel_id, date_str, worker_id, labor_type_id, hours, price_per_hour, total_price, description, invoice_group=None):
     cur = conn.execute(
-        "INSERT INTO labors (parcel_id, date, worker_id, labor_type_id, hours, price_per_hour, total_price, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (parcel_id, date_str, worker_id, labor_type_id, hours, price_per_hour, total_price, description)
+        "INSERT INTO labors (parcel_id, date, worker_id, labor_type_id, hours, price_per_hour, total_price, description, invoice_group) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (parcel_id, date_str, worker_id, labor_type_id, hours, price_per_hour, total_price, description, invoice_group)
     )
     conn.commit()
     return cur.lastrowid
@@ -36,6 +36,20 @@ def sum_by_parcel(conn, parcel_id):
 
 def soft_delete(conn, parcel_id, item_id):
     conn.execute("UPDATE labors SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND parcel_id = ?", (item_id, parcel_id))
+    conn.commit()
+
+
+def list_by_group(conn, invoice_group, exclude_parcel_id):
+    return conn.execute("""
+        SELECT l.*, p.name as parcel_name
+        FROM labors l
+        JOIN parcels p ON p.id = l.parcel_id
+        WHERE l.invoice_group = ? AND l.parcel_id != ? AND l.is_deleted = 0
+    """, (invoice_group, exclude_parcel_id)).fetchall()
+
+
+def soft_delete_by_group(conn, invoice_group):
+    conn.execute("UPDATE labors SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE invoice_group = ?", (invoice_group,))
     conn.commit()
 
 

@@ -43,7 +43,10 @@ function filterTables() {
                     <tr>
                         <td>{{ item.date | format_date }}</td>
                         <td>{{ item.worker_name }}</td>
-                        <td><span class="badge bg-secondary">{{ item.labor_type_name }}</span></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ item.labor_type_name }}</span>
+                            {% if item.invoice_group %}<span class="badge bg-secondary" title="Aquest treball forma part d'un jornal repartit amb una altra parcel·la">🔗 Compartit</span>{% endif %}
+                        </td>
                         <td>{{ item.hours }}</td>
                         <td>{{ item.price_per_hour }} €</td>
                         <td><strong>{{ item.total_price }} €</strong></td>
@@ -65,6 +68,11 @@ function filterTables() {
                                 <a href="{{ url_for('edit_labor', id=item.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Esborrar</button>
                             </form>
+                            {% if item.invoice_group %}
+                            <form action="{{ url_for('delete_invoice_group', category='labor', invoice_group=item.invoice_group) }}" method="post" onsubmit="return confirm('Això esborrarà aquest treball a TOTES les parcel·les afectades per aquest jornal compartit. Continuar?');" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Esborrar jornal complet</button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -164,7 +172,7 @@ function filterTables() {
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Esborrar</button>
                             </form>
                             {% if item.invoice_group %}
-                            <form action="{{ url_for('delete_invoice_group', invoice_group=item.invoice_group) }}" method="post" onsubmit="return confirm('Això esborrarà aquesta despesa a TOTES les parcel·les afectades per aquesta factura compartida. Continuar?');" class="d-inline">
+                            <form action="{{ url_for('delete_invoice_group', category='expense', invoice_group=item.invoice_group) }}" method="post" onsubmit="return confirm('Això esborrarà aquesta despesa a TOTES les parcel·les afectades per aquesta factura compartida. Continuar?');" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-outline-warning">Esborrar factura completa</button>
                             </form>
                             {% endif %}

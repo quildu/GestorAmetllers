@@ -22,12 +22,14 @@ def register(app):
             parcels_service.create_parcel(conn, name, float(hectares) if hectares else 0)
         return redirect(url_for('list_parcels'))
 
-    @app.route('/parcels/<int:parcel_id>/hectares', methods=['POST'])
+    @app.route('/parcels/<int:parcel_id>/edit', methods=['POST'])
     @admin_required
-    def update_parcel_hectares(parcel_id):
+    def update_parcel(parcel_id):
+        name = request.form.get('name', '').strip()
         hectares = request.form.get('hectares', '').strip()
-        conn = get_connection()
-        parcels_service.update_hectares(conn, parcel_id, float(hectares) if hectares else 0)
+        if name:
+            conn = get_connection()
+            parcels_service.update_parcel(conn, parcel_id, name, float(hectares) if hectares else 0)
         return redirect(url_for('list_parcels'))
 
     @app.route('/parcela/<int:parcel_id>/')
