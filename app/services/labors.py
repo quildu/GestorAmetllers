@@ -65,6 +65,7 @@ def _create_shared_labor(conn, primary_parcel_id, other_parcel_ids, date_str, pr
             hours = round(total_hours * share, 2)
             remaining_hours -= hours
             parcel_total_price = round(hours * price_per_hour, 2)
+            remaining_total_price -= parcel_total_price
 
         if pid == primary_parcel_id:
             worker_id = primary_worker_id
@@ -149,6 +150,7 @@ def _update_shared_labor(conn, primary_parcel_id, primary_item_id, existing_grou
             hours = round(total_hours * share, 2)
             remaining_hours -= hours
             parcel_total_price = round(hours * price_per_hour, 2)
+            remaining_total_price -= parcel_total_price
 
         if pid == primary_parcel_id:
             labors_repo.update(conn, primary_parcel_id, primary_item_id, date_str, worker_id, labor_type_id, hours, price_per_hour, parcel_total_price, description, invoice_group)
