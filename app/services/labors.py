@@ -169,7 +169,22 @@ def _update_shared_labor(conn, primary_parcel_id, primary_item_id, existing_grou
 
 
 def get_labor(conn, parcel_id, item_id):
-    return labors_repo.get(conn, parcel_id, item_id)
+    """Si el treball es comparteix amb altres parcel·les, retorna les hores i el preu total
+    sumats de tot el grup (no nomes la part d'aquesta parcel·la), perque en editar-lo el
+    formulari parteixi del total real i no d'una part ja repartida (si no, cada edicio
+    reduiria el total repartit)."""
+    item = labors_repo.get(conn, parcel_id, item_id)
+    if not item or not item['invoice_group']:
+        return item
+
+    siblings = labors_repo.list_by_group(conn, item['invoice_group'], parcel_id)
+    if not siblings:
+        return item
+
+    item = dict(item)
+    item['hours'] = round(item['hours'] + sum(s['hours'] for s in siblings), 2)
+    item['total_price'] = round(item['total_price'] + sum(s['total_price'] for s in siblings), 2)
+    return item
 
 
 def list_labors(conn, parcel_id):

@@ -119,7 +119,20 @@ def _update_shared_expense(conn, primary_parcel_id, primary_item_id, existing_gr
 
 
 def get_expense(conn, parcel_id, item_id):
-    return expenses_repo.get(conn, parcel_id, item_id)
+    """Si la despesa es comparteix amb altres parcel·les, retorna l'import total sumat de tot
+    el grup (no nomes la part d'aquesta parcel·la), perque en editar-la el formulari parteixi
+    del total real i no d'una part ja repartida (si no, cada edicio reduiria el total repartit)."""
+    item = expenses_repo.get(conn, parcel_id, item_id)
+    if not item or not item['invoice_group']:
+        return item
+
+    siblings = expenses_repo.list_by_group(conn, item['invoice_group'], parcel_id)
+    if not siblings:
+        return item
+
+    item = dict(item)
+    item['amount'] = round(item['amount'] + sum(s['amount'] for s in siblings), 2)
+    return item
 
 
 def list_expenses(conn, parcel_id):

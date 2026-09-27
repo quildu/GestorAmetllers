@@ -3,19 +3,71 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>📋 Historial de la Finca</h1>
     <div class="d-flex gap-2">
-        <input type="text" id="tableSearch" class="form-control" placeholder="🔍 Cerca ràpida (qualsevol camp)..." onkeyup="filterTables()">
+        <input type="text" id="tableSearch" class="form-control" placeholder="🔍 Cerca ràpida (qualsevol camp)..." onkeyup="filterAllTables()">
         <a href="{{ url_for('index') }}" class="btn btn-secondary text-nowrap">Tornar</a>
     </div>
 </div>
 
+<style>
+.sortable-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.sortable-th:hover { background-color: rgba(255,255,255,0.15); }
+.sort-icon { font-size: 0.7em; margin-left: 4px; opacity: 0.8; }
+.filter-row th { background: #fff; padding: 4px 6px; }
+.filter-row input { font-weight: normal; }
+</style>
 <script>
-function filterTables() {
-    let input = document.getElementById("tableSearch").value.toUpperCase();
-    let rows = document.querySelectorAll("tbody tr");
-    rows.forEach(row => {
-        let text = row.textContent.toUpperCase();
-        row.style.display = text.includes(input) ? "" : "none";
+const HISTORY_TABLE_IDS = ['laborsTable', 'productionTable', 'expensesTable'];
+const sortState = {};
+
+function sortTable(tableId, colIndex, type) {
+    const table = document.getElementById(tableId);
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows);
+    const prev = sortState[tableId];
+    const asc = !(prev && prev.colIndex === colIndex && prev.asc);
+    sortState[tableId] = { colIndex, asc };
+
+    const cellValue = (row) => {
+        const cell = row.cells[colIndex];
+        const raw = cell.dataset.value !== undefined ? cell.dataset.value : cell.textContent.trim();
+        return type === 'number' ? (parseFloat(raw.replace(',', '.')) || 0) : raw;
+    };
+
+    rows.sort((r1, r2) => {
+        const v1 = cellValue(r1), v2 = cellValue(r2);
+        const cmp = type === 'number' ? (v1 - v2) : String(v1).localeCompare(String(v2), 'ca', { sensitivity: 'base', numeric: true });
+        return asc ? cmp : -cmp;
     });
+
+    rows.forEach(r => tbody.appendChild(r));
+
+    table.querySelectorAll('thead .sort-icon').forEach(icon => icon.textContent = '');
+    const activeIcon = table.querySelector(`thead th[data-col-index="${colIndex}"] .sort-icon`);
+    if (activeIcon) activeIcon.textContent = asc ? '▲' : '▼';
+}
+
+function filterTable(tableId) {
+    const table = document.getElementById(tableId);
+    const globalTerm = document.getElementById('tableSearch').value.trim().toUpperCase();
+    const colInputs = table.querySelectorAll('.col-filter');
+
+    Array.from(table.tBodies[0].rows).forEach(row => {
+        let visible = true;
+        colInputs.forEach(input => {
+            const term = input.value.trim().toUpperCase();
+            if (!term) return;
+            const idx = parseInt(input.dataset.colIndex, 10);
+            if (!row.cells[idx].textContent.toUpperCase().includes(term)) visible = false;
+        });
+        if (visible && globalTerm) {
+            visible = row.textContent.toUpperCase().includes(globalTerm);
+        }
+        row.style.display = visible ? '' : 'none';
+    });
+}
+
+function filterAllTables() {
+    HISTORY_TABLE_IDS.forEach(filterTable);
 }
 </script>
 
@@ -27,30 +79,41 @@ function filterTables() {
             <table class="table table-striped table-hover mt-3" id="laborsTable">
                 <thead class="table-dark">
                     <tr>
-                        <th>Data</th>
-                        <th>Treballador</th>
-                        <th>Feina</th>
-                        <th>Hores</th>
-                        <th>€/Hora</th>
-                        <th>Total</th>
-                        <th>Audit</th>
+                        <th class="sortable-th" data-col-index="0" onclick="sortTable('laborsTable', 0, 'text')">Data <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="1" onclick="sortTable('laborsTable', 1, 'text')">Treballador <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="2" onclick="sortTable('laborsTable', 2, 'text')">Feina <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="3" onclick="sortTable('laborsTable', 3, 'number')">Hores <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="4" onclick="sortTable('laborsTable', 4, 'number')">€/Hora <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="5" onclick="sortTable('laborsTable', 5, 'number')">Total <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="6" onclick="sortTable('laborsTable', 6, 'text')">Audit <span class="sort-icon"></span></th>
                         <th>Documents</th>
                         <th>Accions</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="0" placeholder="Filtra..." oninput="filterTable('laborsTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="1" placeholder="Filtra..." oninput="filterTable('laborsTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="2" placeholder="Filtra..." oninput="filterTable('laborsTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="3" placeholder="Filtra..." oninput="filterTable('laborsTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="4" placeholder="Filtra..." oninput="filterTable('laborsTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="5" placeholder="Filtra..." oninput="filterTable('laborsTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="6" placeholder="Filtra..." oninput="filterTable('laborsTable')"></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in labors %}
                     <tr>
-                        <td>{{ item.date | format_date }}</td>
+                        <td data-value="{{ item.date }}">{{ item.date | format_date }}</td>
                         <td>{{ item.worker_name }}</td>
-                        <td>
+                        <td data-value="{{ item.labor_type_name }}">
                             <span class="badge bg-secondary">{{ item.labor_type_name }}</span>
                             {% if item.invoice_group %}<span class="badge bg-secondary" title="Aquest treball forma part d'un jornal repartit amb una altra parcel·la">🔗 Compartit</span>{% endif %}
                         </td>
-                        <td>{{ item.hours if item.hours else '—' }}</td>
-                        <td>{{ (item.price_per_hour ~ ' €') if item.price_per_hour else '—' }}</td>
-                        <td><strong>{{ item.total_price }} €</strong></td>
-                        <td>
+                        <td data-value="{{ item.hours or 0 }}">{{ item.hours if item.hours else '—' }}</td>
+                        <td data-value="{{ item.price_per_hour or 0 }}">{{ (item.price_per_hour ~ ' €') if item.price_per_hour else '—' }}</td>
+                        <td data-value="{{ item.total_price }}"><strong>{{ item.total_price }} €</strong></td>
+                        <td data-value="{{ item.updated_at }}">
                             <div style="font-size: 0.7rem; color: #666;">
                                 C: {{ item.created_at | format_date }}<br>
                                 M: {{ item.updated_at | format_date }}
@@ -85,23 +148,32 @@ function filterTables() {
             <table class="table table-striped table-hover mt-3" id="productionTable">
                 <thead class="table-dark">
                     <tr>
-                        <th>Data</th>
-                        <th>Quilos</th>
-                        <th>€/Kg</th>
-                        <th>Total</th>
-                        <th>Audit</th>
+                        <th class="sortable-th" data-col-index="0" onclick="sortTable('productionTable', 0, 'text')">Data <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="1" onclick="sortTable('productionTable', 1, 'number')">Quilos <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="2" onclick="sortTable('productionTable', 2, 'number')">€/Kg <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="3" onclick="sortTable('productionTable', 3, 'number')">Total <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="4" onclick="sortTable('productionTable', 4, 'text')">Audit <span class="sort-icon"></span></th>
                         <th>Documents</th>
                         <th>Accions</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="0" placeholder="Filtra..." oninput="filterTable('productionTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="1" placeholder="Filtra..." oninput="filterTable('productionTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="2" placeholder="Filtra..." oninput="filterTable('productionTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="3" placeholder="Filtra..." oninput="filterTable('productionTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="4" placeholder="Filtra..." oninput="filterTable('productionTable')"></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in production %}
                     <tr>
-                        <td>{{ row.date | format_date }}</td>
-                        <td>{{ row.kilos }} kg</td>
-                        <td>{{ row.price_per_kilo }}€</td>
-                        <td><strong>{{ row.total_income }}€</strong></td>
-                        <td>
+                        <td data-value="{{ row.date }}">{{ row.date | format_date }}</td>
+                        <td data-value="{{ row.kilos or 0 }}">{{ row.kilos }} kg</td>
+                        <td data-value="{{ row.price_per_kilo or 0 }}">{{ row.price_per_kilo }}€</td>
+                        <td data-value="{{ row.total_income }}"><strong>{{ row.total_income }}€</strong></td>
+                        <td data-value="{{ row.updated_at }}">
                             <div style="font-size: 0.7rem; color: #666;">
                                 C: {{ row.created_at | format_date }}<br>
                                 M: {{ row.updated_at | format_date }}
@@ -133,27 +205,35 @@ function filterTables() {
     <div class="card-header bg-danger text-white"><h3>💧 Despeses i Avaries</h3></div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover" id="expensesTable">
                 <thead>
                     <tr>
-                        <th>Data</th>
-                        <th>Tipus</th>
-                        <th>Descripció</th>
-                        <th>Import</th>
+                        <th class="sortable-th" data-col-index="0" onclick="sortTable('expensesTable', 0, 'text')">Data <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="1" onclick="sortTable('expensesTable', 1, 'text')">Tipus <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="2" onclick="sortTable('expensesTable', 2, 'text')">Descripció <span class="sort-icon"></span></th>
+                        <th class="sortable-th" data-col-index="3" onclick="sortTable('expensesTable', 3, 'number')">Import <span class="sort-icon"></span></th>
                         <th>Documents</th>
                         <th>Accions</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="0" placeholder="Filtra..." oninput="filterTable('expensesTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="1" placeholder="Filtra..." oninput="filterTable('expensesTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="2" placeholder="Filtra..." oninput="filterTable('expensesTable')"></th>
+                        <th><input type="text" class="form-control form-control-sm col-filter" data-col-index="3" placeholder="Filtra..." oninput="filterTable('expensesTable')"></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in expenses %}
                     <tr>
-                        <td>{{ item.date }}</td>
-                        <td><span class="badge bg-info text-dark">{{ item.expense_type_name }}</span></td>
-                        <td>
+                        <td data-value="{{ item.date }}">{{ item.date }}</td>
+                        <td data-value="{{ item.expense_type_name }}"><span class="badge bg-info text-dark">{{ item.expense_type_name }}</span></td>
+                        <td data-value="{{ item.description }}">
                             {{ item.description }}
                             {% if item.invoice_group %}<span class="badge bg-secondary" title="Aquesta despesa forma part d'una factura repartida amb una altra parcel·la">🔗 Compartida</span>{% endif %}
                         </td>
-                        <td><strong>{{ item.amount }} €</strong></td>
+                        <td data-value="{{ item.amount }}"><strong>{{ item.amount }} €</strong></td>
                         <td>
                             {% for doc in expense_docs.get(item.id, []) %}
                             <a href="{{ url_for('download_document', doc_id=doc.id) }}" class="d-block small" title="{{ doc.original_filename }}">📎 {{ doc.original_filename }}</a>
