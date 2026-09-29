@@ -1,5 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
+{% if irrigation_alerts %}
+<div class="alert alert-danger d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span>⚠️ <strong>{{ irrigation_alerts|length }}</strong> reg{{ 's' if irrigation_alerts|length > 1 else '' }} amb cabal anòmal els últims 7 dies
+        (sectors {{ irrigation_alerts|map(attribute='sector_id')|unique|sort|join(', ') }}).</span>
+    <a href="{{ url_for('sectors') }}" class="btn btn-sm btn-light">Veure sectors</a>
+</div>
+{% endif %}
 <div class="row mb-5">
     <div class="col-md-4">
         <div class="card text-white bg-success mb-3 shadow">

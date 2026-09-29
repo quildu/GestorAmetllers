@@ -104,6 +104,29 @@ def import_digitals(conn, unit_id, body):
         """, (unit_id, sensor_id, d.get("name"), d.get("xState")))
 
 
+def import_sector_history(conn, unit_id, items):
+    rows = []
+    for it in items:
+        duration = (it.get("time") or {}).get("value") or 0
+        volume = (it.get("volume") or {}).get("value") or 0
+        flow = (it.get("flow") or {}).get("actual")
+        if flow is None and duration:
+            flow = volume / (duration / 3600)
+        fertilizer = sum(((it.get(f"fertilizer{n}") or {}).get("time") or {}).get("value") or 0 for n in range(1, 5))
+        rows.append((unit_id, it["sectorNumber"], it["dateFrom"], it.get("dateTo"), duration, volume, flow, fertilizer))
+    conn.executemany("""
+        INSERT INTO vegga_irrigation_history (
+            unit_id, sector_id, date_from, date_to, duration_seconds, volume_m3, flow_m3h, fertilizer_seconds
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(unit_id, sector_id, date_from) DO UPDATE SET
+            date_to=excluded.date_to, duration_seconds=excluded.duration_seconds, volume_m3=excluded.volume_m3,
+            flow_m3h=excluded.flow_m3h, fertilizer_seconds=excluded.fertilizer_seconds,
+            imported_at=CURRENT_TIMESTAMP
+    """, rows)
+    conn.commit()
+    return len(rows)
+
+
 def import_captured(captured, unit_id):
     """captured: llista de {"url", "status", "body"} tal com les recull scraper.py"""
     conn = get_connection()

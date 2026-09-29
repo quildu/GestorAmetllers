@@ -9,6 +9,18 @@ services:
     expose:
       - "5000"
 
+  # Comprovacio diaria del cabal de reg per sector (avisos per Telegram)
+  monitor:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - TZ=Europe/Madrid
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./db:/app/db
+    command: ["python", "scripts/check_irrigation.py", "--daemon", "--at", "07:30"]
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped

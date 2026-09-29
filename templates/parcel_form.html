@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% macro val(field) %}{% if parcel and parcel[field] is not none and parcel[field] is defined %}{{ parcel[field] }}{% endif %}{% endmacro %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{% if parcel and parcel['id'] %}✏️ Fitxa de {{ parcel['name'] }}{% else %}➕ Nova parcel·la{% endif %}</h1>
+    <a href="{{ url_for('manage_parcels') }}" class="btn btn-outline-secondary">← Tornar</a>
+</div>
+
+{% if errors %}
+<div class="alert alert-danger">
+    <ul class="mb-0">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post" action="{% if parcel and parcel['id'] %}{{ url_for('edit_parcel', parcel_id=parcel['id']) }}{% else %}{{ url_for('add_parcel') }}{% endif %}">
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark text-white"><h5 class="mb-0">🌳 Dades generals</h5></div>
+        <div class="card-body row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nom de la parcel·la *</label>
+                <input type="text" class="form-control" name="name" value="{{ val('name') }}" placeholder="Ex: Els Plans" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Hectàrees</label>
+                <input type="number" step="any" min="0" class="form-control" name="hectares" value="{{ val('hectares') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Unitat Vegga</label>
+                <input type="number" min="0" class="form-control" name="vegga_unit_id" value="{{ val('vegga_unit_id') }}" placeholder="Ex: 9982">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Cultiu</label>
+                <select class="form-select" name="crop">
+                    <option value="">— Tria —</option>
+                    {% for key, label in crops %}
+                    <option value="{{ key }}" {% if val('crop') == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Varietat</label>
+                <input type="text" class="form-control" name="variety" value="{{ val('variety') }}" placeholder="Ex: Guara, Marcona, Vairo...">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Any de plantació</label>
+                <input type="number" min="1900" max="{{ current_year }}" class="form-control" name="planting_year" value="{{ val('planting_year') }}" placeholder="Ex: 2015">
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark text-white"><h5 class="mb-0">📐 Marc de plantació</h5></div>
+        <div class="card-body row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Distància entre files (m)</label>
+                <input type="number" step="any" min="0" class="form-control" name="row_spacing" value="{{ val('row_spacing') }}" placeholder="Ex: 7">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Distància entre arbres (m)</label>
+                <input type="number" step="any" min="0" class="form-control" name="tree_spacing" value="{{ val('tree_spacing') }}" placeholder="Ex: 6">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Cobertura de la copa (%) <span class="text-muted small">opcional</span></label>
+                <input type="number" step="any" min="0" max="100" class="form-control" name="canopy_cover_pct" value="{{ val('canopy_cover_pct') }}" placeholder="Si es deixa buit, s'estima per l'edat">
+                <div class="form-text">% del terra ombrejat al migdia. Arbre adult ≈ 60-70 %.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark text-white"><h5 class="mb-0">💧 Sistema de reg</h5></div>
+        <div class="card-body row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Cabal del goter (L/h)</label>
+                <input type="number" step="any" min="0" class="form-control" name="emitter_flow" value="{{ val('emitter_flow') }}" placeholder="Ex: 4">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Separació entre goters (m)</label>
+                <input type="number" step="any" min="0" class="form-control" name="emitter_spacing" value="{{ val('emitter_spacing') }}" placeholder="Ex: 1">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Mànega</label>
+                <select class="form-select" name="hose_lines">
+                    <option value="1" {% if val('hose_lines')|string != '2' %}selected{% endif %}>Simple (1 línia)</option>
+                    <option value="2" {% if val('hose_lines')|string == '2' %}selected{% endif %}>Doble (2 línies)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Eficiència del reg (%)</label>
+                <input type="number" step="any" min="50" max="100" class="form-control" name="irrigation_efficiency" value="{{ efficiency_pct }}">
+                <div class="form-text">Goteig ben mantingut ≈ 90 %.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark text-white"><h5 class="mb-0">🌦️ Estació meteorològica (ETo)</h5></div>
+        <div class="card-body">
+            {% if stations %}
+            <select class="form-select" name="meteo_station">
+                <option value="">— Sense estació (ETo manual) —</option>
+                {% for group in stations|groupby('comarca') %}
+                <optgroup label="{{ group.grouper }}">
+                    {% for s in group.list %}
+                    <option value="{{ s.code }}" {% if val('meteo_station') == s.code %}selected{% endif %}>{{ s.name }} ({{ s.code }})</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
+            </select>
+            {% else %}
+            <input type="text" class="form-control" name="meteo_station" value="{{ val('meteo_station') }}" maxlength="3" placeholder="Codi XEMA, ex: VC">
+            <div class="form-text">No s'ha pogut carregar la llista d'estacions; entra el codi a mà.</div>
+            {% endif %}
+            <div class="form-text">Tria l'estació de la XEMA més propera. L'ETo i la pluja diàries es descarreguen automàticament.</div>
+        </div>
+    </div>
+
+    <div class="d-grid d-md-flex justify-content-md-end mb-5">
+        <button type="submit" class="btn btn-success btn-lg px-5">💾 Desar</button>
+    </div>
+</form>
+{% endblock %}

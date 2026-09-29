@@ -3,9 +3,31 @@ CREATE TABLE IF NOT EXISTS parcels (
     name TEXT NOT NULL,
     hectares REAL NOT NULL DEFAULT 0,
     vegga_unit_id INTEGER,
+    crop TEXT,
+    variety TEXT,
+    planting_year INTEGER,
+    row_spacing REAL,
+    tree_spacing REAL,
+    canopy_cover_pct REAL,
+    emitter_flow REAL,
+    emitter_spacing REAL,
+    hose_lines INTEGER DEFAULT 1,
+    irrigation_efficiency REAL DEFAULT 0.9,
+    meteo_station TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_deleted INTEGER DEFAULT 0
+);
+
+-- ETo i pluja diaries per estacio (XEMA de Meteocat, o entrada manual)
+CREATE TABLE IF NOT EXISTS meteo_daily (
+    station_code TEXT NOT NULL,
+    date TEXT NOT NULL,
+    eto REAL,
+    rain REAL,
+    source TEXT NOT NULL DEFAULT 'xema',
+    imported_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (station_code, date)
 );
 
 CREATE TABLE IF NOT EXISTS workers (
@@ -169,6 +191,45 @@ CREATE TABLE IF NOT EXISTS vegga_programs (
     friday INTEGER, saturday INTEGER, sunday INTEGER,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (unit_id, program_id)
+);
+
+-- Historial de regs per sector (pestanya "Historial" de Vegga, agrupat per dia). Dates en UTC.
+CREATE TABLE IF NOT EXISTS vegga_irrigation_history (
+    unit_id INTEGER NOT NULL,
+    sector_id INTEGER NOT NULL,
+    date_from TEXT NOT NULL,
+    date_to TEXT,
+    duration_seconds INTEGER,
+    volume_m3 REAL,
+    flow_m3h REAL,
+    fertilizer_seconds INTEGER,
+    imported_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (unit_id, sector_id, date_from)
+);
+
+-- Cabal de referencia de cada sector, per detectar fuites o obstruccions
+CREATE TABLE IF NOT EXISTS irrigation_sectors (
+    parcel_id INTEGER NOT NULL,
+    sector_id INTEGER NOT NULL,
+    reference_flow_m3h REAL,
+    notes TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (parcel_id, sector_id),
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id)
+);
+
+-- Anomalies detectades per la comprovacio diaria (evita avisar dues vegades del mateix reg)
+CREATE TABLE IF NOT EXISTS irrigation_alerts (
+    parcel_id INTEGER NOT NULL,
+    sector_id INTEGER NOT NULL,
+    date_from TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    flow_m3h REAL,
+    reference_flow_m3h REAL,
+    notified INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (parcel_id, sector_id, date_from),
+    FOREIGN KEY (parcel_id) REFERENCES parcels (id)
 );
 
 CREATE TABLE IF NOT EXISTS vegga_analog_sensors (

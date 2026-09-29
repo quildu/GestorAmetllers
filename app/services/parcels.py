@@ -9,14 +9,18 @@ def list_parcels_with_totals(conn):
     return parcels_repo.list_with_totals(conn)
 
 
-def create_parcel(conn, name, hectares=0):
-    parcel_id = parcels_repo.create(conn, name, hectares)
+def get_parcel(conn, parcel_id):
+    return parcels_repo.get_active(conn, parcel_id)
+
+
+def create_parcel(conn, data):
+    parcel_id = parcels_repo.create(conn, data)
     seed_defaults_for_parcel(conn, parcel_id)
     return parcel_id
 
 
-def update_parcel(conn, parcel_id, name, hectares):
-    parcels_repo.update(conn, parcel_id, name, hectares)
+def update_parcel(conn, parcel_id, data):
+    parcels_repo.update(conn, parcel_id, data)
 
 
 def list_other_parcels(conn, parcel_id):

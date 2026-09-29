@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% set badge = {'ok': 'bg-success', 'high': 'bg-danger', 'low': 'bg-warning text-dark', 'no_water': 'bg-dark',
+                'overlap': 'bg-info text-dark', 'short': 'bg-light text-dark border', 'no_ref': 'bg-secondary'} %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1>🚰 Sectors i consum real</h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('irrigation') }}" class="btn btn-outline-secondary btn-sm">🌱 Necessitats de reg</a>
+        {% if current_user.is_admin and parcel.vegga_unit_id %}
+        <form action="{{ url_for('sync_sectors') }}" method="post">
+            <button type="submit" class="btn btn-outline-primary btn-sm" {% if sync and sync.running %}disabled{% endif %}>🔄 Descarregar historial de Vegga</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if not parcel.vegga_unit_id %}
+<div class="alert alert-info">Aquesta parcel·la no té cap unitat Vegga assignada.
+    {% if current_user.is_admin %}<a href="{{ url_for('edit_parcel') }}" class="alert-link">Assigna-la a la fitxa →</a>{% endif %}</div>
+{% else %}
+
+{% if sync and sync.running %}
+<div class="alert alert-info">⏳ S'està descarregant l'historial de Vegga (pot trigar un minut). <a href="{{ url_for('sectors') }}" class="alert-link">Recarregar</a></div>
+{% elif sync and sync.error %}
+<div class="alert alert-danger">No s'ha pogut descarregar l'historial: {{ sync.error }}</div>
+{% elif sync and sync.count is not none %}
+<div class="alert alert-success">Historial actualitzat: {{ sync.count }} registres.</div>
+{% endif %}
+<p class="text-muted small">
+    Última descàrrega: {{ last_imported or 'mai' }} (UTC). La comprovació diària la fa automàticament.
+    Criteri: <span class="badge bg-danger">fuita</span> més d'un {{ ((factors.high - 1) * 100)|round|int }} % per sobre de la referència ·
+    <span class="badge bg-warning text-dark">poca aigua</span> més d'un {{ ((1 - factors.low) * 100)|round|int }} % per sota ·
+    <span class="badge bg-dark">sense aigua</span> menys del {{ (factors.no_water * 100)|round|int }} % ·
+    <span class="badge bg-info text-dark">solapat</span> dos sectors regant alhora (no es pot atribuir el volum).
+</p>
+
+{% if alerts %}
+<div class="card shadow mb-4 border-danger">
+    <div class="card-header bg-danger text-white"><h6 class="mb-0">⚠️ Anomalies dels últims 14 dies</h6></div>
+    <ul class="list-group list-group-flush small">
+        {% for a in alerts %}
+        <li class="list-group-item">
+            <span class="badge {{ badge[a.kind] }}">{{ a.label }}</span>
+            Sector {{ a.sector_id }} · {{ a.start_local.strftime('%d/%m %H:%M') }} ·
+            {{ "%.2f"|format(a.flow_m3h) }} m³/h (referència {{ "%.2f"|format(a.reference_flow_m3h) }})
+            {% if a.notified %}<span class="text-muted">· avisat per Telegram</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-dark text-white"><h6 class="mb-0">🎯 Cabal de referència per sector</h6></div>
+    <div class="card-body pb-0">
+        <form method="get" class="row g-2 align-items-end mb-3">
+            <div class="col-auto"><span class="form-label small d-block">Suggeriment calculat amb el període net:</span></div>
+            <div class="col-auto"><input type="date" name="from" value="{{ period_from }}" class="form-control form-control-sm"></div>
+            <div class="col-auto"><input type="date" name="to" value="{{ period_to }}" class="form-control form-control-sm"></div>
+            <div class="col-auto"><button class="btn btn-sm btn-outline-secondary">Recalcular</button></div>
+        </form>
+        <p class="small text-muted mb-2">Tria un període en què saps que no hi havia fuites. El suggeriment és el cabal típic
+            de cada sector en aquell període, descartant els regs solapats, els curts i els que s'allunyen més d'un 15 %.</p>
+    </div>
+    <form method="post" action="{{ url_for('save_sector_references', **({'from': period_from, 'to': period_to})) }}">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Sector</th><th>Referència (m³/h)</th><th>Suggeriment</th><th>Notes</th></tr></thead>
+                <tbody>
+                    {% for s in sector_ids %}
+                    {% set ref = references.get(s) %}
+                    {% set sug = suggestions.get(s) %}
+                    <tr>
+                        <td><strong>Sector {{ s }}</strong></td>
+                        <td style="max-width: 130px;">
+                            <input type="number" step="0.01" min="0" name="ref_{{ s }}" id="ref_{{ s }}" class="form-control form-control-sm"
+                                   value="{{ ref.reference_flow_m3h if ref and ref.reference_flow_m3h else '' }}" {% if not current_user.is_admin %}disabled{% endif %}>
+                        </td>
+                        <td>
+                            {% if sug %}
+                            {{ "%.2f"|format(sug.value) }} <span class="text-muted small">({{ sug.n }}/{{ sug.total }} regs)</span>
+                            {% if current_user.is_admin %}<button type="button" class="btn btn-link btn-sm p-0 ms-1 use-suggestion" data-target="ref_{{ s }}" data-value="{{ sug.value }}">usar</button>{% endif %}
+                            {% else %}<span class="text-muted small">sense regs nets</span>{% endif %}
+                        </td>
+                        <td><input type="text" name="notes_{{ s }}" class="form-control form-control-sm" value="{{ ref.notes if ref and ref.notes else '' }}" placeholder="Ex: canviats goters 08/2026" {% if not current_user.is_admin %}disabled{% endif %}></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">Encara no hi ha historial. Descarrega'l de Vegga.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if current_user.is_admin and sector_ids %}
+        <div class="card-body d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" id="use-all">Usar tots els suggeriments</button>
+            <button type="submit" class="btn btn-success">💾 Desar referències</button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+{% if table.labels %}
+<div class="card shadow mb-4">
+    <div class="card-header bg-dark text-white"><h6 class="mb-0">📈 Cabal típic per quinzena (m³/h)</h6></div>
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered text-center mb-0 small">
+            <thead><tr><th>Sector</th>{% for l in table.labels %}<th>{{ l[5:7] }}/{{ l[2:4] }} {{ 'Q1' if l[-1] == '1' else 'Q2' }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for row in table.rows %}
+                {% set ref = references.get(row.sector) %}
+                {% set rv = ref.reference_flow_m3h if ref else none %}
+                <tr>
+                    <th>S{{ row.sector }}</th>
+                    {% for v in row.flows %}
+                    {% if v is none %}<td class="text-muted">–</td>
+                    {% elif rv and v > rv * factors.high %}<td class="table-danger">{{ "%.1f"|format(v) }}</td>
+                    {% elif rv and v < rv * factors.no_water %}<td class="table-dark">{{ "%.1f"|format(v) }}</td>
+                    {% elif rv and v < rv * factors.low %}<td class="table-warning">{{ "%.1f"|format(v) }}</td>
+                    {% else %}<td>{{ "%.1f"|format(v) }}</td>{% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-body small text-muted">Mediana dels regs nets de cada quinzena. Els colors apareixen quan el sector té referència.</div>
+</div>
+{% endif %}
+
+<div class="card shadow mb-5">
+    <div class="card-header bg-dark text-white"><h6 class="mb-0">📅 Regs dels últims 14 dies</h6></div>
+    <div class="table-responsive">
+        <table class="table table-sm table-striped mb-0 align-middle small">
+            <thead><tr><th>Inici</th><th>Sector</th><th class="text-end">Durada</th><th class="text-end">Volum (m³)</th><th class="text-end">Cabal (m³/h)</th><th class="text-end">Desviació</th><th>Estat</th></tr></thead>
+            <tbody>
+                {% for r in recent_runs %}
+                <tr>
+                    <td>{{ r.start_local.strftime('%d/%m %H:%M') }}</td>
+                    <td>{{ r.sector }}</td>
+                    <td class="text-end">{{ r.minutes|round|int }} min</td>
+                    <td class="text-end">{{ "%.2f"|format(r.volume) }}</td>
+                    <td class="text-end">{{ "%.2f"|format(r.flow) }}</td>
+                    <td class="text-end">{% if r.deviation_pct is not none %}{{ "%+.0f"|format(r.deviation_pct) }} %{% else %}–{% endif %}</td>
+                    <td><span class="badge {{ badge[r.status] }}">{{ r.status_label }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center text-muted py-3">Sense regs.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.querySelectorAll('.use-suggestion').forEach(function (btn) {
+    btn.addEventListener('click', function () { document.getElementById(btn.dataset.target).value = btn.dataset.value; });
+});
+var useAll = document.getElementById('use-all');
+if (useAll) useAll.addEventListener('click', function () {
+    document.querySelectorAll('.use-suggestion').forEach(function (btn) { btn.click(); });
+});
+</script>
+{% endblock %}

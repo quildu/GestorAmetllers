@@ -1,53 +1,33 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <h1>🗂️ Parcel·les</h1>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('manage_parcels') }}" class="btn btn-outline-dark">⚙️ Gestionar parcel·les</a>
+    {% endif %}
 </div>
 
 <div class="row g-4 mb-5">
     {% for p in parcels %}
     <div class="col-md-4">
-        <div class="card shadow h-100">
-            <a href="{{ url_for('index', parcel_id=p.id) }}" class="text-decoration-none text-reset">
-                <div class="card-body pb-2">
+        <a href="{{ url_for('index', parcel_id=p.id) }}" class="text-decoration-none text-reset">
+            <div class="card shadow h-100">
+                <div class="card-body">
                     <h4 class="card-title">🌳 {{ p.name }}</h4>
-                    <p class="text-muted small mb-2">{{ "%.2f"|format(p.hectares) }} ha</p>
+                    <p class="text-muted small mb-2">
+                        {{ "%.2f"|format(p.hectares) }} ha
+                        {% if p.crop %} · {{ crop_label(p.crop) }}{% endif %}
+                        {% if p.variety %} ({{ p.variety }}){% endif %}
+                        {% if p.planting_year %} · {{ current_year - p.planting_year }} anys{% endif %}
+                    </p>
                     <p class="mb-1 text-success">Ingressos: <strong>{{ "%.2f"|format(p.income_total) }} €</strong></p>
                     <p class="mb-0 text-danger">Despeses: <strong>{{ "%.2f"|format(p.expenses_total) }} €</strong></p>
                 </div>
-            </a>
-            {% if current_user.is_admin %}
-            <div class="card-footer bg-white border-top-0 pt-0">
-                <form action="{{ url_for('update_parcel', parcel_id=p.id) }}" method="post" class="d-flex gap-2 align-items-center">
-                    <input type="text" name="name" value="{{ p.name }}" class="form-control form-control-sm" required>
-                    <input type="number" step="any" min="0" name="hectares" value="{{ p.hectares }}" class="form-control form-control-sm" style="max-width: 80px;">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Actualitzar</button>
-                </form>
             </div>
-            {% endif %}
-        </div>
+        </a>
     </div>
+    {% else %}
+    <p class="text-muted">Encara no hi ha cap parcel·la.</p>
     {% endfor %}
 </div>
-
-{% if current_user.is_admin %}
-<div class="card shadow">
-    <div class="card-header bg-dark text-white"><h5 class="mb-0">➕ Nova parcel·la</h5></div>
-    <div class="card-body">
-        <form action="{{ url_for('add_parcel') }}" method="post" class="row g-2 align-items-end">
-            <div class="col-md-6">
-                <label class="form-label">Nom de la parcel·la</label>
-                <input type="text" class="form-control" name="name" placeholder="Ex: Els Plans" required>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Hectàrees</label>
-                <input type="number" step="any" min="0" class="form-control" name="hectares" placeholder="Ex: 1.5">
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-success w-100">Crear parcel·la</button>
-            </div>
-        </form>
-    </div>
-</div>
-{% endif %}
 {% endblock %}

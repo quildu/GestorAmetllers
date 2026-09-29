@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h1>⚙️ Gestió de parcel·les</h1>
+    <a href="{{ url_for('add_parcel') }}" class="btn btn-success">➕ Nova parcel·la</a>
+</div>
+
+<div class="card shadow">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Parcel·la</th>
+                    <th>Cultiu / varietat</th>
+                    <th class="text-end">ha</th>
+                    <th>Edat</th>
+                    <th>Marc</th>
+                    <th>Reg</th>
+                    <th>Estació</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in parcels %}
+                <tr>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td>{{ crop_label(p.crop) or '—' }}{% if p.variety %} · {{ p.variety }}{% endif %}</td>
+                    <td class="text-end">{{ "%.2f"|format(p.hectares) }}</td>
+                    <td>{% if p.planting_year %}{{ current_year - p.planting_year }} anys{% else %}—{% endif %}</td>
+                    <td>{% if p.row_spacing and p.tree_spacing %}{{ p.row_spacing|round(2) }} × {{ p.tree_spacing|round(2) }} m{% else %}—{% endif %}</td>
+                    <td>
+                        {% if p.emitter_flow and p.emitter_spacing %}
+                        {{ p.emitter_flow|round(2) }} L/h c/{{ p.emitter_spacing|round(2) }} m · {{ 'doble' if p.hose_lines == 2 else 'simple' }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ p.meteo_station or '—' }}</td>
+                    <td class="text-end text-nowrap">
+                        <a href="{{ url_for('edit_parcel', parcel_id=p.id) }}" class="btn btn-sm btn-outline-primary">✏️ Editar fitxa</a>
+                        <a href="{{ url_for('irrigation', parcel_id=p.id) }}" class="btn btn-sm btn-outline-info">🌱 Reg</a>
+                        <a href="{{ url_for('sectors', parcel_id=p.id) }}" class="btn btn-sm btn-outline-info">🚰 Sectors</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Encara no hi ha cap parcel·la.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

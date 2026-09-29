@@ -10,6 +10,7 @@ poder-les inspeccionar abans de decidir com guardar-les a la base de dades.
 import json
 import os
 import re
+import urllib.parse
 from datetime import datetime
 
 from playwright.sync_api import sync_playwright
@@ -73,6 +74,53 @@ def login(page):
             "Revisa VEGGA_EMAIL/VEGGA_PASSWORD al .env, o mira la captura de "
             "depuracio a data/vegga_debug/."
         )
+
+
+HISTORY_PAGE_SIZE = 200
+
+
+def fetch_sector_history(unit: str, date_from: str, date_to: str, show: bool = False):
+    """Torna els regs per sector (agrupats per dia) entre date_from i date_to ('YYYY-MM-DD').
+
+    L'enllac directe a /history fa petar el frontal de Vegga; cal entrar a l'equip i clicar
+    la pestanya. Aprofitem la peticio que fa la pagina per reutilitzar-ne l'URL i el token.
+    """
+    if not EMAIL or not PASSWORD:
+        raise RuntimeError("Falten VEGGA_EMAIL / VEGGA_PASSWORD al fitxer .env.")
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=not show)
+        page = browser.new_page(viewport={"width": 1400, "height": 1000})
+        try:
+            login(page)
+            page.goto(f"{BASE_APP_URL}/irrigation-control/devices/{unit}/programs")
+            page.wait_for_load_state("networkidle", timeout=30000)
+            with page.expect_request(lambda r: "/history/sectors" in r.url, timeout=45000) as req_info:
+                page.get_by_text("Historial", exact=True).first.click()
+            request = req_info.value
+            base_url = request.url.split("?")[0]
+
+            items = []
+            page_number = 1
+            while True:
+                query = urllib.parse.urlencode({
+                    "from": date_from, "to": date_to, "grouping": "DAY", "sector": 0,
+                    "pageNumber": page_number, "pageSize": HISTORY_PAGE_SIZE,
+                })
+                resp = page.request.get(f"{base_url}?{query}", headers=request.headers)
+                if not resp.ok:
+                    raise RuntimeError(f"Vegga ha respost {resp.status} a l'historial de sectors.")
+                body = resp.json()
+                batch = body.get("items", [])
+                items.extend(batch)
+                if len(batch) < HISTORY_PAGE_SIZE or len(items) >= body.get("totalElements", 0):
+                    return items
+                page_number += 1
+        except Exception:
+            debug_dump(page, "history_failed")
+            raise
+        finally:
+            browser.close()
 
 
 def scrape(unit: str, pages: list[str], show: bool = False):

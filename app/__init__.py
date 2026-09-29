@@ -30,6 +30,8 @@ def create_app():
         document_routes,
         vegga_routes,
         report_routes,
+        irrigation_routes,
+        sector_routes,
     )
 
     for module in (
@@ -45,6 +47,8 @@ def create_app():
         document_routes,
         vegga_routes,
         report_routes,
+        irrigation_routes,
+        sector_routes,
     ):
         module.register(app)
 

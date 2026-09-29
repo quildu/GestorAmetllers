@@ -24,12 +24,29 @@ def seed_first_parcel(conn):
         conn.execute("INSERT INTO parcels (id, name, vegga_unit_id, hectares) VALUES (1, 'Servereta', 9982, 7)")
         conn.commit()
 
+PARCEL_TECH_COLUMNS = {
+    'crop': 'TEXT',
+    'variety': 'TEXT',
+    'planting_year': 'INTEGER',
+    'row_spacing': 'REAL',
+    'tree_spacing': 'REAL',
+    'canopy_cover_pct': 'REAL',
+    'emitter_flow': 'REAL',
+    'emitter_spacing': 'REAL',
+    'hose_lines': 'INTEGER DEFAULT 1',
+    'irrigation_efficiency': 'REAL DEFAULT 0.9',
+    'meteo_station': 'TEXT',
+}
+
 # Columnes afegides despres de la creacio inicial d'aquestes taules; cal donar-les
 # d'alta en calent a les bases de dades que ja existien abans d'aquest canvi.
 def migrate_extra_columns(conn):
     parcel_columns = [row[1] for row in conn.execute("PRAGMA table_info(parcels)").fetchall()]
     if 'hectares' not in parcel_columns:
         conn.execute("ALTER TABLE parcels ADD COLUMN hectares REAL NOT NULL DEFAULT 0")
+    for column, definition in PARCEL_TECH_COLUMNS.items():
+        if column not in parcel_columns:
+            conn.execute(f"ALTER TABLE parcels ADD COLUMN {column} {definition}")
 
     expense_columns = [row[1] for row in conn.execute("PRAGMA table_info(expenses)").fetchall()]
     if 'invoice_group' not in expense_columns:
