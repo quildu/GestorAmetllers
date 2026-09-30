@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="ca">
 
 <head>
     <meta charset="UTF-8">
@@ -14,44 +14,121 @@
 
         .navbar {
             background-color: #2e7d32;
+            --bs-navbar-padding-y: .35rem;
+            --bs-navbar-color: rgba(255, 255, 255, .82);
+            --bs-navbar-hover-color: #fff;
         }
 
-        /* Verd camp */
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .parcel-switch {
+            color: #fff;
+            background: rgba(255, 255, 255, .12);
+            border: 1px solid rgba(255, 255, 255, .25);
+            border-radius: 2rem;
+            padding: .2rem .8rem;
+            font-size: .9rem;
+        }
+
+        .parcel-switch:hover,
+        .parcel-switch.show {
+            color: #fff;
+            background: rgba(255, 255, 255, .22);
+        }
+
+        .navbar .nav-link {
+            font-size: .95rem;
+            padding-inline: .75rem !important;
+            border-radius: .4rem;
+        }
+
+        .navbar .nav-link.active {
+            background: rgba(0, 0, 0, .18);
+        }
+
+        .navbar .dropdown-menu {
+            font-size: .95rem;
+        }
+
+        .dropdown-item.active {
+            background-color: #2e7d32;
+        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4 sticky-top">
+    {% set ep = request.endpoint or '' %}
+    {% set irrigation_eps = ['irrigation', 'sectors', 'vegga'] %}
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4 sticky-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="/">🌳 El Gestor de Casa Rita</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <div class="d-flex align-items-center gap-2">
+                <a class="navbar-brand me-1" href="{{ url_for('list_parcels') }}">🌳 Casa Rita</a>
+                {% if current_user.is_authenticated and g.get('current_parcel') %}
+                <div class="dropdown">
+                    <button class="btn parcel-switch dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ g.current_parcel.name }}
+                    </button>
+                    <ul class="dropdown-menu shadow">
+                        <li><h6 class="dropdown-header">Canviar de parcel·la</h6></li>
+                        {% for p in nav_parcels %}
+                        <li><a class="dropdown-item {{ 'active' if p.id == g.parcel_id }}" href="{{ url_for('index', parcel_id=p.id) }}">{{ p.name }}</a></li>
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('list_parcels') }}">Veure-les totes</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Menú">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                {% if current_user.is_authenticated %}
-                <ul class="navbar-nav ms-auto align-items-lg-center">
-                    {% if g.get('current_parcel') %}
-                    <li class="nav-item"><span class="navbar-text text-white-50 me-2">📍 {{ g.current_parcel.name }}</span></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Inici</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('history') }}">📋 Historial</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('reports') }}">📊 Informes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('irrigation') }}">🌱 Necessitats de reg</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('sectors') }}">🚰 Sectors</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('vegga') }}">💧 Reg (Vegga)</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('list_parcels') }}">🔀 Canviar parcel·la</a></li>
-                    {% endif %}
-                    {% if current_user.is_admin %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('manage_parcels') }}">⚙️ Gestió parcel·les</a></li>
-                    {% endif %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">🚪 Sortir</a></li>
+                {% if g.get('current_parcel') %}
+                <ul class="navbar-nav mx-lg-auto">
+                    <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'index' }}" href="{{ url_for('index') }}">Inici</a></li>
+                    <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'history' }}" href="{{ url_for('history') }}">Historial</a></li>
+                    <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'reports' }}" href="{{ url_for('reports') }}">Informes</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {{ 'active' if ep in irrigation_eps }}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Reg</a>
+                        <ul class="dropdown-menu shadow">
+                            <li><a class="dropdown-item {{ 'active' if ep == 'irrigation' }}" href="{{ url_for('irrigation') }}">🌱 Necessitats de reg</a></li>
+                            <li><a class="dropdown-item {{ 'active' if ep == 'sectors' }}" href="{{ url_for('sectors') }}">🚰 Sectors i consum</a></li>
+                            <li><a class="dropdown-item {{ 'active' if ep == 'vegga' }}" href="{{ url_for('vegga') }}">💧 Programador Vegga</a></li>
+                        </ul>
+                    </li>
                 </ul>
                 {% endif %}
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Compte">
+                            👤 <span class="d-lg-none">{{ current_user.id }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li><h6 class="dropdown-header">{{ current_user.id }}{% if current_user.is_admin %} · administrador{% endif %}</h6></li>
+                            {% if current_user.is_admin %}
+                            {% if g.get('current_parcel') %}
+                            <li><a class="dropdown-item {{ 'active' if ep == 'edit_parcel' }}" href="{{ url_for('edit_parcel') }}">Fitxa de la parcel·la</a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item {{ 'active' if ep in ['manage_parcels', 'add_parcel'] }}" href="{{ url_for('manage_parcels') }}">Gestió de parcel·les</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Sortir</a></li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
+            {% endif %}
         </div>
     </nav>
     <div class="container">
         {% block content %}{% endblock %}
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

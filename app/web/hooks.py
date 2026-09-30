@@ -28,6 +28,12 @@ def register(app):
         g.parcel_id = parcel_id
         g.current_parcel = parcel
 
+    @app.context_processor
+    def inject_nav_parcels():
+        if not g.get('current_parcel'):
+            return {}
+        return {'nav_parcels': parcels_repo.list_all(get_connection())}
+
     @app.url_defaults
     def inject_parcel_id(endpoint, values):
         if 'parcel_id' in values:
