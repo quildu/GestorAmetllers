@@ -183,6 +183,7 @@ CREATE TABLE IF NOT EXISTS vegga_programs (
     unit_id INTEGER NOT NULL,
     program_id INTEGER NOT NULL,
     name TEXT,
+    program_type INTEGER,  -- 0: arrenca a l'hora start_minutes; 1: sequencial, start_minutes es el programa previ
     sector1 INTEGER,
     start_minutes INTEGER,
     duration_seconds INTEGER,

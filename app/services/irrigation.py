@@ -134,13 +134,30 @@ def tree_geometry(parcel):
     }
 
 
+SEQUENTIAL_PROGRAM = 1
+WEEK_DAYS = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+
+
+def _chain_head(program, by_id):
+    """Un programa sequencial arrenca quan acaba el de start_minutes: els dies que valen son els del primer de la cadena."""
+    seen = set()
+    while program and program['program_type'] == SEQUENTIAL_PROGRAM:
+        if program['program_id'] in seen:
+            return None
+        seen.add(program['program_id'])
+        program = by_id.get(program['start_minutes'])
+    return program
+
+
 def _programmed_minutes_per_sector(conn, unit_id):
-    days = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+    programs = vegga_repo.get_active_programs(conn, unit_id)
+    by_id = {p['program_id']: p for p in programs}
     sectors = {}
-    for p in vegga_repo.get_active_programs(conn, unit_id):
+    for p in programs:
         if not p['sector1'] or not p['duration_seconds']:
             continue
-        active_days = sum(1 for d in days if p[d])
+        head = _chain_head(p, by_id)
+        active_days = sum(1 for d in WEEK_DAYS if head and head[d])
         if not active_days:
             continue
         s = sectors.setdefault(p['sector1'], {'sector': p['sector1'], 'minutes_week': 0, 'programs': []})

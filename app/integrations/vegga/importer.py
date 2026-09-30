@@ -69,17 +69,17 @@ def import_programs(conn, unit_id, body):
         program_id = p["pk"]["id"]
         conn.execute("""
             INSERT INTO vegga_programs (
-                unit_id, program_id, name, sector1, start_minutes, duration_seconds, fertilizer1,
+                unit_id, program_id, name, program_type, sector1, start_minutes, duration_seconds, fertilizer1,
                 monday, tuesday, wednesday, thursday, friday, saturday, sunday, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(unit_id, program_id) DO UPDATE SET
-                name=excluded.name, sector1=excluded.sector1, start_minutes=excluded.start_minutes,
+                name=excluded.name, program_type=excluded.program_type, sector1=excluded.sector1, start_minutes=excluded.start_minutes,
                 duration_seconds=excluded.duration_seconds, fertilizer1=excluded.fertilizer1,
                 monday=excluded.monday, tuesday=excluded.tuesday, wednesday=excluded.wednesday,
                 thursday=excluded.thursday, friday=excluded.friday, saturday=excluded.saturday,
                 sunday=excluded.sunday, updated_at=CURRENT_TIMESTAMP
         """, (
-            unit_id, program_id, p.get("name"), p.get("sector1"), p.get("start"), p.get("value"),
+            unit_id, program_id, p.get("name"), p.get("type"), p.get("sector1"), p.get("start"), p.get("value"),
             p.get("fertilizer1"), _bool_to_int(p.get("monday")), _bool_to_int(p.get("tuesday")),
             _bool_to_int(p.get("wednesday")), _bool_to_int(p.get("thursday")), _bool_to_int(p.get("friday")),
             _bool_to_int(p.get("saturday")), _bool_to_int(p.get("sunday")),
