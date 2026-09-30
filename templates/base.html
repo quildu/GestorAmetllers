@@ -61,7 +61,7 @@
 
 <body>
     {% set ep = request.endpoint or '' %}
-    {% set irrigation_eps = ['irrigation', 'sectors', 'vegga'] %}
+    {% set irrigation_eps = ['irrigation', 'sectors', 'vegga', 'data_sync'] %}
     <nav class="navbar navbar-expand-lg navbar-dark mb-4 sticky-top shadow-sm">
         <div class="container">
             <div class="d-flex align-items-center gap-2">
@@ -99,6 +99,8 @@
                             <li><a class="dropdown-item {{ 'active' if ep == 'irrigation' }}" href="{{ url_for('irrigation') }}">🌱 Necessitats de reg</a></li>
                             <li><a class="dropdown-item {{ 'active' if ep == 'sectors' }}" href="{{ url_for('sectors') }}">🚰 Sectors i consum</a></li>
                             <li><a class="dropdown-item {{ 'active' if ep == 'vegga' }}" href="{{ url_for('vegga') }}">💧 Programador Vegga</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item {{ 'active' if ep == 'data_sync' }}" href="{{ url_for('data_sync') }}">🔄 Sincronització de dades</a></li>
                         </ul>
                     </li>
                 </ul>

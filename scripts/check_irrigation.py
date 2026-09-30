@@ -4,7 +4,7 @@ cabal de cada reg amb la referencia del sector i avisa per Telegram de les anoma
 
 Us:
     python scripts/check_irrigation.py                 # una comprovacio ara
-    python scripts/check_irrigation.py --daemon --at 07:30   # cada dia a aquesta hora (Docker)
+    python scripts/check_irrigation.py --daemon            # cada dia a IRRIGATION_CHECK_AT (07:30 per defecte)
     python scripts/check_irrigation.py --test-telegram # envia un missatge de prova
 """
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument("--days", type=int, default=CHECK_DAYS, help="Dies enrere a revisar")
     parser.add_argument("--no-sync", action="store_true", help="No descarregar de Vegga, només revisar la BD")
     parser.add_argument("--daemon", action="store_true", help="Queda en marxa i comprova cada dia")
-    parser.add_argument("--at", default="07:30", help="Hora de la comprovació diària (HH:MM, hora local)")
+    parser.add_argument("--at", default=sector_flow.DAILY_CHECK_AT, help="Hora de la comprovació diària (HH:MM, hora local)")
     parser.add_argument("--test-telegram", action="store_true", help="Envia un missatge de prova i surt")
     args = parser.parse_args()
 

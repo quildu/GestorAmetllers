@@ -66,6 +66,7 @@
     pluja {{ "%.1f"|format(r.weekly.rain_sum) }} mm (efectiva {{ "%.1f"|format(r.weekly.pe_sum) }} mm) ·
     necessitat neta {{ "%.1f"|format(r.weekly.net_mm) }} mm/setmana.
     L'XEMA publica les dades amb 1-2 dies de retard.
+    <a href="{{ url_for('data_sync') }}">Quan s'actualitzen les dades?</a>
 </p>
 {% if real_week and real_week.runs and parcel.hectares %}
 {% set recommended_m3 = r.weekly.m3_ha_week * parcel.hectares %}

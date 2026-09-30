@@ -32,6 +32,7 @@ def create_app():
         report_routes,
         irrigation_routes,
         sector_routes,
+        data_sync_routes,
     )
 
     for module in (
@@ -49,6 +50,7 @@ def create_app():
         report_routes,
         irrigation_routes,
         sector_routes,
+        data_sync_routes,
     ):
         module.register(app)
 

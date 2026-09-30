@@ -19,7 +19,7 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - ./db:/app/db
-    command: ["python", "scripts/check_irrigation.py", "--daemon", "--at", "07:30"]
+    command: ["python", "scripts/check_irrigation.py", "--daemon"]
 
   caddy:
     image: caddy:2-alpine

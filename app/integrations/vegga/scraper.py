@@ -77,6 +77,7 @@ def login(page):
 
 
 HISTORY_PAGE_SIZE = 200
+HISTORY_MAX_PAGES = 500
 
 
 def fetch_sector_history(unit: str, date_from: str, date_to: str, show: bool = False):
@@ -101,6 +102,7 @@ def fetch_sector_history(unit: str, date_from: str, date_to: str, show: bool = F
             base_url = request.url.split("?")[0]
 
             items = []
+            seen = set()
             page_number = 1
             while True:
                 query = urllib.parse.urlencode({
@@ -112,8 +114,13 @@ def fetch_sector_history(unit: str, date_from: str, date_to: str, show: bool = F
                     raise RuntimeError(f"Vegga ha respost {resp.status} a l'historial de sectors.")
                 body = resp.json()
                 batch = body.get("items", [])
-                items.extend(batch)
-                if len(batch) < HISTORY_PAGE_SIZE or len(items) >= body.get("totalElements", 0):
+                new = [it for it in batch if (it.get("sectorNumber"), it.get("dateFrom")) not in seen]
+                seen.update((it.get("sectorNumber"), it.get("dateFrom")) for it in new)
+                items.extend(new)
+                # Vegga pot retallar el pageSize (p.ex. a 20): no es pot parar quan la pagina ve "curta",
+                # nomes quan ve buida (o repetida) o ja tenim totalElements.
+                total = body.get("totalElements")
+                if not new or (total is not None and len(items) >= total) or page_number >= HISTORY_MAX_PAGES:
                     return items
                 page_number += 1
         except Exception:
@@ -123,11 +130,40 @@ def fetch_sector_history(unit: str, date_from: str, date_to: str, show: bool = F
             browser.close()
 
 
+def _has_more_pages(body):
+    # Respostes paginades de l'API agronic: {"content": [...], "totalPages": N, "number": 0, "last": false, ...}
+    return (isinstance(body, dict) and "content" in body and body.get("number") == 0
+            and body.get("last") is False and (body.get("totalPages") or 0) > 1)
+
+
+def fetch_remaining_pages(page, paginated, captured):
+    """La web de Vegga nomes carrega la primera pagina (p.ex. 20 neteges de filtre): demanem la resta."""
+    for url, (headers, total_pages) in paginated.items():
+        parts = urllib.parse.urlsplit(url)
+        params = dict(urllib.parse.parse_qsl(parts.query))
+        if "page" not in params:
+            print(f"Resposta paginada sense parametre 'page', no es pot completar: {url}")
+            continue
+        first = int(params["page"])
+        for n in range(first + 1, first + min(total_pages, HISTORY_MAX_PAGES)):
+            params["page"] = str(n)
+            page_url = urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(params)))
+            resp = page.request.get(page_url, headers=headers)
+            if not resp.ok:
+                print(f"[{resp.status}] no s'ha pogut descarregar {page_url}")
+                break
+            body = resp.json()
+            captured.append({"url": page_url, "status": resp.status, "body": body})
+            if not body.get("content") or body.get("last"):
+                break
+
+
 def scrape(unit: str, pages: list[str], show: bool = False):
     if not EMAIL or not PASSWORD:
         raise RuntimeError("Falten VEGGA_EMAIL / VEGGA_PASSWORD al fitxer .env.")
 
     captured = []
+    paginated = {}
 
     def on_response(response):
         content_type = response.headers.get("content-type", "")
@@ -138,6 +174,8 @@ def scrape(unit: str, pages: list[str], show: bool = False):
         except Exception:
             return
         captured.append({"url": response.url, "status": response.status, "body": body})
+        if _has_more_pages(body):
+            paginated[response.url] = (response.request.headers, body["totalPages"])
 
     def dump_captured():
         out_dir = os.path.join(BASE_DIR, "data", "vegga_raw", datetime.now().strftime("%Y%m%d_%H%M%S"))
@@ -176,6 +214,8 @@ def scrape(unit: str, pages: list[str], show: bool = False):
                 page.goto(url)
                 page.wait_for_load_state("networkidle", timeout=20000)
                 page.wait_for_timeout(1500)
+
+            fetch_remaining_pages(page, paginated, captured)
         finally:
             dump_captured()
             browser.close()

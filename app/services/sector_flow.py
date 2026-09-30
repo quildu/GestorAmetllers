@@ -5,6 +5,7 @@ sectors reguen alhora es marquen com a solapats: el comptador suma l'aigua de to
 i no es pot atribuir el volum a cap sector.
 """
 
+import os
 import statistics
 import threading
 import time
@@ -22,6 +23,8 @@ LOW_FACTOR = 0.80
 NO_WATER_FACTOR = 0.10
 SUGGEST_BAND = 0.15
 FIRST_SYNC_DAYS = 365
+# Hora de la comprovacio diaria (servei 'monitor' de docker-compose, scripts/check_irrigation.py).
+DAILY_CHECK_AT = os.getenv("IRRIGATION_CHECK_AT", "07:30")
 RESYNC_OVERLAP_DAYS = 2
 # Vegga sol comptar un segon de mes (7201 s per un reg de 2 h): sense marge, regs consecutius semblarien solapats.
 OVERLAP_TOLERANCE = timedelta(minutes=2)

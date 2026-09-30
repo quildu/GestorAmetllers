@@ -59,3 +59,8 @@ def get_latest_digital_sensors(conn, unit_id):
         SELECT * FROM vegga_digital_sensors
         WHERE unit_id = ? AND snapshot_at = (SELECT MAX(snapshot_at) FROM vegga_digital_sensors WHERE unit_id = ?)
     """, (unit_id, unit_id)).fetchall()
+
+
+def last_sync_at(conn, unit_id):
+    row = conn.execute("SELECT MAX(snapshot_at) AS at FROM vegga_status WHERE unit_id = ?", (unit_id,)).fetchone()
+    return row['at'] if row else None

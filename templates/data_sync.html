@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% macro ago(hours) %}{% if hours is none %}mai{% elif hours < 1 %}fa {{ (hours * 60)|round|int }} min{% elif hours < 48 %}fa {{ hours|round|int }} h{% else %}fa {{ (hours / 24)|round|int }} dies{% endif %}{% endmacro %}
+{% block content %}
+<h1>🔄 Sincronització de dades</h1>
+<p class="text-muted">
+    D'on treu l'app les dades de reg de <strong>{{ parcel.name }}</strong>, quan s'actualitzen i quan es va fer l'última vegada.
+    Totes les hores són hora local.
+</p>
+
+{% for s in sources %}
+<div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <strong>{{ s.icon }} {{ s.title }}</strong>
+        {% if s.synced_at is none %}
+        <span class="badge bg-secondary">{{ s.never_label or "Encara no s'ha descarregat mai" }}</span>
+        {% elif s.stale %}
+        <span class="badge bg-warning text-dark">Actualitzat {{ ago(s.hours_ago) }}</span>
+        {% else %}
+        <span class="badge bg-success">Actualitzat {{ ago(s.hours_ago) }}</span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <p class="mb-2">{{ s.what }}</p>
+
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+                <div class="small text-muted">Última actualització</div>
+                <div class="fw-bold">{{ s.synced_at.strftime('%d/%m/%Y %H:%M') if s.synced_at else '—' }}</div>
+            </div>
+            {% if s.latest_data_label %}
+            <div class="col-sm-6">
+                <div class="small text-muted">{{ s.latest_data_label }}</div>
+                <div class="fw-bold">
+                    {% if s.latest_data is none %}—
+                    {% elif s.latest_data.hour is defined %}{{ s.latest_data.strftime('%d/%m/%Y %H:%M') }}
+                    {% else %}{{ s.latest_data.strftime('%d/%m/%Y') }}{% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if s.stale %}<div class="alert alert-warning py-2">{{ s.stale_hint }}</div>{% endif %}
+
+        <div class="small text-muted mb-1">Quan s'actualitza</div>
+        <ul class="mb-2">
+            {% for w in s.when %}<li>{{ w }}</li>{% endfor %}
+        </ul>
+        <p class="small mb-2">ℹ️ {{ s.not_when }}</p>
+
+        <div class="small text-muted mb-1">On es fa servir</div>
+        <ul class="mb-3">
+            {% for u in s.used_in %}<li>{{ u }}</li>{% endfor %}
+        </ul>
+
+        <a href="{{ url_for(s.action[0]) }}" class="btn btn-sm btn-outline-primary">{{ s.action[1] }} →</a>
+    </div>
+</div>
+{% endfor %}
+
+{% if not parcel.vegga_unit_id %}
+<p class="text-muted small">Aquesta parcel·la no té cap programador Vegga associat, per això no es mostren dades de Vegga.</p>
+{% endif %}
+{% endblock %}

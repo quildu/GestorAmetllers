@@ -34,3 +34,11 @@ def list_range(conn, station_code, since_date):
         WHERE station_code = ? AND date >= ? AND eto IS NOT NULL
         ORDER BY date DESC
     """, (station_code, since_date)).fetchall()
+
+
+def last_import(conn, station_code):
+    row = conn.execute("""
+        SELECT MAX(date) AS latest_date, MAX(imported_at) AS imported_at
+        FROM meteo_daily WHERE station_code = ? AND eto IS NOT NULL
+    """, (station_code,)).fetchone()
+    return row['latest_date'], row['imported_at']
