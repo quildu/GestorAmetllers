@@ -47,6 +47,8 @@ def check_parcel(conn, parcel, days, sync=True):
             sector_flow.mark_notified(conn, parcel['id'], pending)
         elif not telegram.is_configured():
             print("Telegram no configurat: les anomalies només es veuran a l'app.")
+        else:
+            print("No s'ha pogut enviar cap avís per Telegram: es tornarà a provar a la propera comprovació.")
 
 
 def run_once(days, sync=True):

@@ -37,12 +37,21 @@ def save_reference(conn, parcel_id, sector_id, reference_flow, notes):
 
 
 def insert_alert(conn, parcel_id, sector_id, date_from, kind, flow, reference):
-    """Torna True si l'alerta es nova."""
-    cur = conn.execute("""
-        INSERT OR IGNORE INTO irrigation_alerts (parcel_id, sector_id, date_from, kind, flow_m3h, reference_flow_m3h)
+    """Desa l'alerta; si encara no s'ha notificat, l'actualitza amb la referencia actual."""
+    conn.execute("""
+        INSERT INTO irrigation_alerts (parcel_id, sector_id, date_from, kind, flow_m3h, reference_flow_m3h)
         VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(parcel_id, sector_id, date_from) DO UPDATE SET
+            kind = excluded.kind, flow_m3h = excluded.flow_m3h, reference_flow_m3h = excluded.reference_flow_m3h
+        WHERE notified = 0
     """, (parcel_id, sector_id, date_from, kind, flow, reference))
-    return cur.rowcount == 1
+
+
+def delete_alerts(conn, parcel_id, keys):
+    conn.executemany(
+        "DELETE FROM irrigation_alerts WHERE parcel_id = ? AND sector_id = ? AND date_from = ?",
+        [(parcel_id, sector_id, date_from) for sector_id, date_from in keys]
+    )
 
 
 def mark_notified(conn, parcel_id, keys):

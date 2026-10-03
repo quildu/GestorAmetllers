@@ -210,11 +210,26 @@ def load_runs(conn, parcel, days):
 # --- Alertes ------------------------------------------------------------------
 
 def record_alerts(conn, parcel, days):
-    """Desa les anomalies dels ultims dies i torna les que encara no s'han notificat."""
+    """Desa les anomalies dels ultims dies i torna les que encara no s'han notificat.
+
+    Els avisos pendents es tornen a validar amb la referencia actual: si s'ha corregit la
+    referencia i el reg ja es correcte, s'esborren; si son de fora del periode revisat, ja
+    no s'envien (es veuen igualment a l'app).
+    """
+    checked, anomalous = set(), set()
     for run in load_runs(conn, parcel, days):
+        key = (run['sector'], run['date_from'])
+        checked.add(key)
         if run['status'] in ALERT_KINDS:
+            anomalous.add(key)
             repo.insert_alert(conn, parcel['id'], run['sector'], run['date_from'], run['status'],
                               run['flow'], run['reference'])
+
+    pending = [(a['sector_id'], a['date_from']) for a in repo.list_pending_notifications(conn, parcel['id'])]
+    repo.delete_alerts(conn, parcel['id'], [k for k in pending if k in checked and k not in anomalous])
+    stale = [k for k in pending if k not in checked]
+    if stale:
+        repo.mark_notified(conn, parcel['id'], stale)
     conn.commit()
     return repo.list_pending_notifications(conn, parcel['id'])
 
